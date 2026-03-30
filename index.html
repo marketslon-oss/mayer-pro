@@ -8,7 +8,7 @@
         label { display: block; margin-top: 10px; font-size: 14px; font-weight: bold; }
         input, select { width: 100%; padding: 10px; margin-top: 5px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        button { width: 100%; padding: 15px; background: #248b65; color: white; border: none; border-radius: 8px; margin-top: 20px; font-weight: bold; }
+        button { width: 100%; padding: 15px; background: #248b65; color: white; border: none; border-radius: 8px; margin-top: 20px; font-weight: bold; cursor: pointer; }
         .user-card { background: #f0f0f0; padding: 10px; border-radius: 8px; margin-bottom: 15px; border-left: 5px solid #248b65; color: #333; }
     </style>
 </head>
@@ -28,11 +28,13 @@
         </div>
     </div>
 
-    <label>Мета та Маршрут:</label>
-    <input type="text" id="goal" placeholder="Мета">
-    <input type="text" id="route" placeholder="Маршрут" style="margin-top:5px;">
+    <label>Мета відрядження:</label>
+    <input type="text" id="goal" placeholder="Наприклад: Огляд техніки">
 
-    <label>Автомобіль:</label>
+    <label>Маршрут:</label>
+    <input type="text" id="route" placeholder="Кропивницький - Київ">
+
+    <label>Вибір авто:</label>
     <select id="car">
         <option value="Opel Combo (KA1197MO)">Opel Combo (KA1197MO)</option>
         <option value="Toyota Corolla (KA4730AP)">Toyota Corolla (KA4730AP)</option>
@@ -41,11 +43,11 @@
 
     <div class="grid">
         <div>
-            <label>Кілометраж (км):</label>
+            <label>Плановий км:</label>
             <input type="number" id="km" value="0">
         </div>
         <div>
-            <label>Ціна палива (грн/л):</label>
+            <label>Ціна палива (л):</label>
             <input type="number" id="fuel_price" value="0">
         </div>
     </div>
@@ -59,12 +61,11 @@
         let tg = window.Telegram.WebApp;
         tg.expand();
 
-        // Отримуємо дані про користувача з посилання (параметр 'user')
         const urlParams = new URLSearchParams(window.location.search);
         const userData = JSON.parse(urlParams.get('user') || '{}');
         
         if(userData.pib) {
-            document.getElementById('user_display').innerHTML = `<b>${userData.pib}</b><br><small>${userData.posada} | ${userData.viddil}</small>`;
+            document.getElementById('user_display').innerHTML = `👤 <b>${userData.pib}</b><br><small>${userData.posada} | ${userData.viddil}</small>`;
         }
 
         function sendData() {
@@ -79,7 +80,6 @@
                 total: document.getElementById('total').value
             };
             tg.sendData(JSON.stringify(data));
-            tg.close();
         }
     </script>
 </body>
