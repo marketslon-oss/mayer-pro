@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 15px; background-color: var(--tg-theme-bg-color); color: var(--tg-theme-text-color); }
+        label { display: block; margin-top: 10px; font-size: 14px; font-weight: bold; }
+        input, select { width: 100%; padding: 10px; margin-top: 5px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; background: #fff; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .total-box { background: #e8f5e9; padding: 10px; border-radius: 8px; margin-top: 15px; border: 1px solid #2e7d32; color: #1b5e20; }
+        button { width: 100%; padding: 15px; background: #248b65; color: white; border: none; border-radius: 8px; margin-top: 20px; font-weight: bold; font-size: 16px; }
+    </style>
+</head>
+<body>
+    <h3>📝 План-кошторис</h3>
+    <p style="font-size: 12px; opacity: 0.8;">Ваші дані (ПІБ, Посада) підтягнуться автоматично.</p>
+
+    <div class="grid">
+        <div>
+            <label>Дата виїзду:</label>
+            <input type="date" id="date_start" onchange="calc()">
+        </div>
+        <div>
+            <label>Дата прибуття:</label>
+            <input type="date" id="date_end" onchange="calc()">
+        </div>
+    </div>
+
+    <label>Мета відрядження:</label>
+    <input type="text" id="goal" placeholder="Наприклад: Огляд техніки">
+
+    <label>Маршрут:</label>
+    <input type="text" id="route" placeholder="Кропивницький - Київ">
+
+    <label>Вибір авто:</label>
+    <select id="car">
+        <option value="Opel Combo (KA1197MO)">Opel Combo (KA1197MO)</option>
+        <option value="Toyota Corolla (KA4730AP)">Toyota Corolla (KA4730AP)</option>
+        <option value="Renault Duster (KA0144РК)">Renault Duster (KA0144РК)</option>
+    </select>
+
+    <label>Планова сума витрат (грн):</label>
+    <input type="number" id="total" value="0" placeholder="Загальна сума">
+
+    <div class="total-box">
+        Діб відрядження: <span id="days_count">0</span>
+    </div>
+
+    <button onclick="sendData()">💾 Зберегти план</button>
+
+    <script>
+        let tg = window.Telegram.WebApp;
+        tg.expand();
+
+        function calc() {
+            let start = new Date(document.getElementById('date_start').value);
+            let end = new Date(document.getElementById('date_end').value);
+            if (start && end && end >= start) {
+                let diff = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+                document.getElementById('days_count').innerText = diff;
+            }
+        }
+
+        function sendData() {
+            let data = {
+                date_start: document.getElementById('date_start').value,
+                date_end: document.getElementById('date_end').value,
+                goal: document.getElementById('goal').value,
+                route: document.getElementById('route').value,
+                car: document.getElementById('car').value,
+                total: document.getElementById('total').value,
+                days: document.getElementById('days_count').innerText
+            };
+            tg.sendData(JSON.stringify(data));
+            tg.close();
+        }
+    </script>
+</body>
+</html>
