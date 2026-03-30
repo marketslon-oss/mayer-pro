@@ -5,11 +5,14 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; padding: 15px; background-color: var(--tg-theme-bg-color); color: var(--tg-theme-text-color); }
-        label { display: block; margin-top: 10px; font-size: 14px; font-weight: bold; }
-        input, select { width: 100%; padding: 10px; margin-top: 5px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; }
+        label { display: block; margin-top: 10px; font-size: 13px; font-weight: bold; opacity: 0.8; }
+        input, select { width: 100%; padding: 12px; margin-top: 5px; border-radius: 10px; border: 1px solid #ccc; box-sizing: border-box; font-size: 15px; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        button { width: 100%; padding: 15px; background: #248b65; color: white; border: none; border-radius: 8px; margin-top: 20px; font-weight: bold; cursor: pointer; }
-        .user-card { background: #f0f0f0; padding: 10px; border-radius: 8px; margin-bottom: 15px; border-left: 5px solid #248b65; color: #333; }
+        .user-card { background: rgba(0,0,0,0.05); padding: 12px; border-radius: 10px; margin-bottom: 15px; border-left: 4px solid #248b65; }
+        .total-box { background: #e8f5e9; padding: 15px; border-radius: 10px; margin-top: 15px; border: 1px solid #2e7d32; text-align: center; }
+        .total-label { font-size: 14px; color: #2e7d32; font-weight: bold; }
+        .total-value { font-size: 26px; color: #1b5e20; font-weight: 900; }
+        button { width: 100%; padding: 16px; background: #248b65; color: white; border: none; border-radius: 10px; margin-top: 20px; font-weight: bold; font-size: 16px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -18,42 +21,31 @@
     </div>
 
     <div class="grid">
-        <div>
-            <label>Дата виїзду:</label>
-            <input type="date" id="date_start">
-        </div>
-        <div>
-            <label>Дата прибуття:</label>
-            <input type="date" id="date_end">
-        </div>
+        <div><label>Дата виїзду:</label><input type="date" id="date_start"></div>
+        <div><label>Дата прибуття:</label><input type="date" id="date_end"></div>
     </div>
 
-    <label>Мета відрядження:</label>
-    <input type="text" id="goal" placeholder="Наприклад: Огляд техніки">
-
-    <label>Маршрут:</label>
-    <input type="text" id="route" placeholder="Кропивницький - Київ">
-
-    <label>Вибір авто:</label>
-    <select id="car">
-        <option value="Opel Combo (KA1197MO)">Opel Combo (KA1197MO)</option>
-        <option value="Toyota Corolla (KA4730AP)">Toyota Corolla (KA4730AP)</option>
-        <option value="Renault Duster (KA0144РК)">Renault Duster (KA0144РК)</option>
+    <label>Вибір автомобіля:</label>
+    <select id="car" onchange="calculate()">
+        <option value="Opel Combo (KA1197MO)" data-cons="6.5" data-fuel="дизель">Opel Combo (6.5л, дизель)</option>
+        <option value="Toyota Corolla (KA4730AP)" data-cons="8.4" data-fuel="бензин">Toyota Corolla (8.4л, бензин)</option>
+        <option value="Renault Duster (KA0144РК)" data-cons="6.5" data-fuel="дизель">Renault Duster (6.5л, дизель)</option>
     </select>
 
     <div class="grid">
-        <div>
-            <label>Плановий км:</label>
-            <input type="number" id="km" value="0">
-        </div>
-        <div>
-            <label>Ціна палива (л):</label>
-            <input type="number" id="fuel_price" value="0">
-        </div>
+        <div><label>Плановий км:</label><input type="number" id="km" value="0" oninput="calculate()"></div>
+        <div><label>Ціна палива:</label><input type="number" id="f_price" value="52" oninput="calculate()"></div>
     </div>
 
-    <label>Планова сума витрат (грн):</label>
-    <input type="number" id="total" value="0">
+    <div class="grid">
+        <div><label>Проживання:</label><input type="number" id="hotel" value="0" oninput="calculate()"></div>
+        <div><label>Добові:</label><input type="number" id="per_diem" value="0" oninput="calculate()"></div>
+    </div>
+
+    <div class="total-box">
+        <div class="total-label">ПЛАНОВА СУМА ВИТРАТ:</div>
+        <div class="total-value"><span id="res">0</span> грн</div>
+    </div>
 
     <button onclick="sendData()">💾 Зберегти план</button>
 
@@ -63,21 +55,34 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         const userData = JSON.parse(urlParams.get('user') || '{}');
-        
-        if(userData.pib) {
-            document.getElementById('user_display').innerHTML = `👤 <b>${userData.pib}</b><br><small>${userData.posada} | ${userData.viddil}</small>`;
+        if(userData.pib) document.getElementById('user_display').innerHTML = `👤 <b>${userData.pib}</b><br><small>${userData.posada}</small>`;
+
+        function calculate() {
+            const km = parseFloat(document.getElementById('km').value) || 0;
+            const price = parseFloat(document.getElementById('f_price').value) || 0;
+            const hotel = parseFloat(document.getElementById('hotel').value) || 0;
+            const pd = parseFloat(document.getElementById('per_diem').value) || 0;
+            
+            const sel = document.getElementById('car');
+            const cons = parseFloat(sel.options[sel.selectedIndex].dataset.cons);
+            
+            const fuelCost = (km * cons / 100) * price;
+            const total = Math.round(fuelCost + hotel + pd);
+            document.getElementById('res').innerText = total;
         }
 
         function sendData() {
+            const sel = document.getElementById('car');
             let data = {
                 date_start: document.getElementById('date_start').value,
                 date_end: document.getElementById('date_end').value,
-                goal: document.getElementById('goal').value,
-                route: document.getElementById('route').value,
-                car: document.getElementById('car').value,
+                car: sel.value,
+                fuel_type: sel.options[sel.selectedIndex].dataset.fuel,
                 km: document.getElementById('km').value,
-                fuel_price: document.getElementById('fuel_price').value,
-                total: document.getElementById('total').value
+                fuel_price: document.getElementById('f_price').value,
+                hotel: document.getElementById('hotel').value,
+                per_diem: document.getElementById('per_diem').value,
+                total: document.getElementById('res').innerText
             };
             tg.sendData(JSON.stringify(data));
         }
