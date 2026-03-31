@@ -8,18 +8,25 @@
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
         .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .user-block { background: #f1f1f1; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 14px; line-height: 1.4; }
         label { display: block; font-weight: bold; margin-top: 10px; font-size: 12px; }
         input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin-top: 4px; box-sizing: border-box; }
         .row { display: flex; gap: 10px; }
         .row > div { flex: 1; }
-        .readonly-field { background: #f0f0f0; color: #666; }
+        .readonly-field { background: #f9f9f9; color: #555; border: 1px dashed #ccc; }
         .total-btn { background: #eef7ee; color: #2e7d32; border: 1px solid #2e7d32; padding: 12px; border-radius: 8px; text-align: center; margin-top: 15px; font-weight: bold; font-size: 18px; }
         .save-btn { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; cursor: pointer; }
     </style>
 </head>
 <body>
     <div class="card">
-        <label>🎯 мета відрядження:</label>
+        <div class="user-block" id="user_info">
+            <b>ПІБ:</b> <span id="pib">...</span><br>
+            <b>Посада:</b> <span id="posada">...</span><br>
+            <b>Відділ:</b> <span id="viddil">...</span>
+        </div>
+
+        <label>🎯 Мета відрядження:</label>
         <input type="text" id="purpose" placeholder="Мета поїздки">
 
         <label>📍 Маршрут:</label>
@@ -31,7 +38,7 @@
         </div>
 
         <div class="row">
-            <div><label>🔢 Кількість діб:</label><input type="number" id="days_count" class="readonly-field" readonly value="1"></div>
+            <div><label>🔢 К-сть діб:</label><input type="number" id="days_count" class="readonly-field" readonly value="1"></div>
             <div>
                 <label>🚗 Автомобіль:</label>
                 <select id="car" onchange="calculate()">
@@ -47,10 +54,77 @@
         </div>
 
         <div class="row">
-            <div><label>⛽ Літри:</label><input type="text" id="fuel_liters" class="readonly-field" readonly></div>
-            <div><label>💵 Сума ПММ:</label><input type="text" id="fuel_sum" class="readonly-field" readonly></div>
+            <div><label>⛽ Літри (авто):</label><input type="text" id="fuel_liters" class="readonly-field" readonly value="0"></div>
+            <div><label>💵 Сума ПММ:</label><input type="text" id="fuel_sum" class="readonly-field" readonly value="0"></div>
         </div>
 
         <div class="row">
-            <div><label>🏨 Проживання:</label><input type="number" id="hotel" value="0" oninput="calculate()"></div>
-            <div><label>🍔 Добові (1 доба):</label><input
+            <div><label>🏨 Готель:</label><input type="number" id="hotel" value="0" oninput="calculate()"></div>
+            <div><label>🍔 Добові (1 доба):</label><input type="number" id="per_diem" value="600" oninput="calculate()"></div>
+        </div>
+
+        <div class="total-btn" id="total_display">РАЗОМ: 0 грн</div>
+        <button class="save-btn" onclick="sendData()">💾 Зберегти план</button>
+    </div>
+
+    <script>
+        let tg = window.Telegram.WebApp;
+        tg.expand();
+
+        // Отримання даних користувача з URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const user = JSON.parse(decodeURIComponent(urlParams.get('user') || '{}'));
+        document.getElementById('pib').innerText = user.pib || '---';
+        document.getElementById('posada').innerText = user.posada || '---';
+        document.getElementById('viddil').innerText = user.viddil || '---';
+
+        function calculate() {
+            const start = new Date(document.getElementById('date_start').value);
+            const end = new Date(document.getElementById('date_end').value);
+            let days = 1;
+            if (start && end && end >= start) {
+                days = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24)) + 1;
+            }
+            document.getElementById('days_count').value = days;
+
+            const km = parseFloat(document.getElementById('km').value) || 0;
+            const price = parseFloat(document.getElementById('price').value) || 0;
+            const cons = parseFloat(document.getElementById('car').value);
+            
+            const liters = (km * cons / 100).toFixed(1);
+            const fuelSum = Math.round(liters * price);
+            
+            document.getElementById('fuel_liters').value = liters;
+            document.getElementById('fuel_sum').value = fuelSum;
+
+            const hotel = parseFloat(document.getElementById('hotel').value) || 0;
+            const perDiem = parseFloat(document.getElementById('per_diem').value) || 0;
+            const total = fuelSum + hotel + (perDiem * days);
+
+            document.getElementById('total_display').innerText = `РАЗОМ: ${Math.round(total)} грн`;
+            return { total, fuelSum, liters, days };
+        }
+
+        function sendData() {
+            const res = calculate();
+            const data = {
+                pib: user.pib,
+                viddil: user.viddil,
+                purpose: document.getElementById('purpose').value,
+                destination: document.getElementById('destination').value,
+                date_start: document.getElementById('date_start').value,
+                date_end: document.getElementById('date_end').value,
+                days_count: res.days,
+                car: document.getElementById('car').options[document.getElementById('car').selectedIndex].text,
+                fuel_liters: res.liters,
+                fuel_sum: res.fuelSum,
+                hotel: document.getElementById('hotel').value,
+                per_diem: document.getElementById('per_diem').value,
+                total: res.total
+            };
+            tg.sendData(JSON.stringify(data));
+            tg.close();
+        }
+    </script>
+</body>
+</html>
