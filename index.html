@@ -8,21 +8,20 @@
         label { display: block; margin-top: 10px; font-size: 13px; font-weight: bold; opacity: 0.8; }
         input, select { width: 100%; padding: 12px; margin-top: 5px; border-radius: 10px; border: 1px solid #ccc; box-sizing: border-box; font-size: 15px; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .user-card { background: rgba(0,0,0,0.05); padding: 12px; border-radius: 10px; margin-bottom: 15px; border-left: 4px solid #248b65; }
+        .user-card { background: rgba(0,0,0,0.05); padding: 12px; border-radius: 10px; margin-bottom: 15px; border-left: 4px solid #248b65; color: #333; }
         .total-box { background: #e8f5e9; padding: 15px; border-radius: 10px; margin-top: 15px; border: 1px solid #2e7d32; text-align: center; }
-        .total-label { font-size: 14px; color: #2e7d32; font-weight: bold; }
-        .total-value { font-size: 26px; color: #1b5e20; font-weight: 900; }
-        button { width: 100%; padding: 16px; background: #248b65; color: white; border: none; border-radius: 10px; margin-top: 20px; font-weight: bold; font-size: 16px; cursor: pointer; }
+        .days-badge { background: #248b65; color: white; padding: 2px 8px; border-radius: 5px; font-size: 12px; margin-left: 5px; }
+        button { width: 100%; padding: 16px; background: #248b65; color: white; border: none; border-radius: 10px; margin-top: 20px; font-weight: bold; font-size: 16px; }
     </style>
 </head>
 <body>
     <div class="user-card">
-        <div id="user_display">Завантаження профілю...</div>
+        <div id="user_display">Завантаження...</div>
     </div>
 
     <div class="grid">
-        <div><label>Дата виїзду:</label><input type="date" id="date_start"></div>
-        <div><label>Дата прибуття:</label><input type="date" id="date_end"></div>
+        <div><label>Дата виїзду:</label><input type="date" id="date_start" onchange="calculate()"></div>
+        <div><label>Дата прибуття:</label><input type="date" id="date_end" onchange="calculate()"></div>
     </div>
 
     <label>Вибір автомобіля:</label>
@@ -43,8 +42,8 @@
     </div>
 
     <div class="total-box">
-        <div class="total-label">ПЛАНОВА СУМА ВИТРАТ:</div>
-        <div class="total-value"><span id="res">0</span> грн</div>
+        <div style="font-size: 13px;">Тривалість: <span id="days_count" class="days-badge">0</span> діб</div>
+        <div style="font-weight: bold; margin-top: 5px; color: #2e7d32;">ПЛАНОВА СУМА: <span id="res" style="font-size: 20px;">0</span> грн</div>
     </div>
 
     <button onclick="sendData()">💾 Зберегти план</button>
@@ -55,9 +54,22 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         const userData = JSON.parse(urlParams.get('user') || '{}');
-        if(userData.pib) document.getElementById('user_display').innerHTML = `👤 <b>${userData.pib}</b><br><small>${userData.posada}</small>`;
+        if(userData.pib) {
+            document.getElementById('user_display').innerHTML = `👤 <b>${userData.pib}</b><br>💼 ${userData.posada}`;
+        }
+
+        let fuelOnly = 0;
+        let diffDays = 0;
 
         function calculate() {
+            const start = new Date(document.getElementById('date_start').value);
+            const end = new Date(document.getElementById('date_end').value);
+            
+            if(start && end && end >= start) {
+                diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+            } else { diffDays = 0; }
+            document.getElementById('days_count').innerText = diffDays;
+
             const km = parseFloat(document.getElementById('km').value) || 0;
             const price = parseFloat(document.getElementById('f_price').value) || 0;
             const hotel = parseFloat(document.getElementById('hotel').value) || 0;
@@ -66,8 +78,8 @@
             const sel = document.getElementById('car');
             const cons = parseFloat(sel.options[sel.selectedIndex].dataset.cons);
             
-            const fuelCost = (km * cons / 100) * price;
-            const total = Math.round(fuelCost + hotel + pd);
+            fuelOnly = Math.round((km * cons / 100) * price);
+            const total = fuelOnly + hotel + pd;
             document.getElementById('res').innerText = total;
         }
 
@@ -76,10 +88,12 @@
             let data = {
                 date_start: document.getElementById('date_start').value,
                 date_end: document.getElementById('date_end').value,
+                days: diffDays,
                 car: sel.value,
                 fuel_type: sel.options[sel.selectedIndex].dataset.fuel,
                 km: document.getElementById('km').value,
                 fuel_price: document.getElementById('f_price').value,
+                fuel_cost: fuelOnly,
                 hotel: document.getElementById('hotel').value,
                 per_diem: document.getElementById('per_diem').value,
                 total: document.getElementById('res').innerText
