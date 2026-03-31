@@ -6,36 +6,36 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; padding: 15px; background-color: var(--tg-theme-bg-color); color: var(--tg-theme-text-color); }
+        .user-card { background: rgba(0,0,0,0.07); padding: 12px; border-radius: 10px; border-left: 4px solid #248b65; margin-bottom: 15px; font-size: 14px; }
+        label { display: block; margin-top: 10px; font-weight: bold; font-size: 13px; opacity: 0.8; }
         input, select { width: 100%; padding: 12px; margin-top: 5px; border-radius: 10px; border: 1px solid #ccc; box-sizing: border-box; background: white; color: black; }
-        label { display: block; margin-top: 10px; font-weight: bold; font-size: 13px; }
-        .user-info { background: rgba(0,0,0,0.05); padding: 10px; border-radius: 10px; border-left: 4px solid #248b65; margin-bottom: 15px; }
-        .total { background: #e8f5e9; padding: 15px; border-radius: 10px; text-align: center; margin-top: 15px; border: 1px solid #2e7d32; color: #2e7d32; font-weight: bold; }
+        .total { background: #e8f5e9; padding: 15px; border-radius: 10px; text-align: center; margin-top: 15px; border: 1px solid #2e7d32; color: #2e7d32; font-size: 18px; font-weight: bold; }
         button { width: 100%; padding: 16px; background: #248b65; color: white; border: none; border-radius: 10px; margin-top: 20px; font-weight: bold; font-size: 16px; }
     </style>
 </head>
 <body>
-    <div class="user-info" id="user_display">Завантаження...</div>
+    <div class="user-card" id="user_display">Завантаження даних...</div>
 
     <label>Мета відрядження:</label>
-    <input type="text" id="purpose">
+    <input type="text" id="purpose" placeholder="Наприклад: Зустріч з клієнтом">
 
-    <label>Маршрут (звідки-куди):</label>
-    <input type="text" id="destination">
+    <label>Маршрут відрядження:</label>
+    <input type="text" id="destination" placeholder="Київ - Львів - Київ">
 
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-        <div><label>Виїзд:</label><input type="date" id="date_start"></div>
-        <div><label>Прибуття:</label><input type="date" id="date_end"></div>
+        <div><label>Дата виїзду:</label><input type="date" id="date_start"></div>
+        <div><label>Дата прибуття:</label><input type="date" id="date_end"></div>
     </div>
 
     <label>Автомобіль:</label>
     <select id="car" onchange="calc()">
-        <option value="Opel Combo (KA1197MO)" data-cons="6.5">Opel (6.5л/100км)</option>
-        <option value="Toyota Corolla (KA4730AP)" data-cons="8.4">Toyota (8.4л/100км)</option>
-        <option value="Renault Duster (KA0144РК)" data-cons="6.5">Renault (6.5л/100км)</option>
+        <option value="Opel Combo (KA1197MO)" data-cons="6.5">Opel Combo (6.5л/100км)</option>
+        <option value="Toyota Corolla (KA4730AP)" data-cons="8.4">Toyota Corolla (8.4л/100км)</option>
+        <option value="Renault Duster (KA0144РК)" data-cons="6.5">Renault Duster (6.5л/100км)</option>
     </select>
 
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-        <div><label>Пробіг, км:</label><input type="number" id="km" value="0" oninput="calc()"></div>
+        <div><label>Плановий км:</label><input type="number" id="km" value="0" oninput="calc()"></div>
         <div><label>Ціна пального:</label><input type="number" id="price" value="52" oninput="calc()"></div>
     </div>
 
@@ -47,9 +47,15 @@
         let tg = window.Telegram.WebApp;
         tg.expand();
 
+        // Отримання та відображення ідентифікації
         const urlParams = new URLSearchParams(window.location.search);
-        let user = JSON.parse(decodeURIComponent(urlParams.get('user') || '{}'));
-        if(user.pib) document.getElementById('user_display').innerHTML = `👤 <b>${user.pib}</b><br>💼 ${user.posada}`;
+        try {
+            let user = JSON.parse(decodeURIComponent(urlParams.get('user') || '{}'));
+            if(user.pib) {
+                document.getElementById('user_display').innerHTML = 
+                    `👤 <b>${user.pib}</b><br>💼 ${user.posada}<br>🏢 ${user.viddil}`;
+            }
+        } catch(e) { console.error("Error parsing user data"); }
 
         function calc() {
             let km = parseFloat(document.getElementById('km').value) || 0;
@@ -69,7 +75,6 @@
                 total: document.getElementById('res').innerText
             };
             tg.sendData(JSON.stringify(data));
-            tg.close();
         }
     </script>
 </body>
