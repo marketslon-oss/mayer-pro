@@ -7,19 +7,25 @@
     <style>
         body { font-family: sans-serif; padding: 15px; background-color: var(--tg-theme-bg-color); color: var(--tg-theme-text-color); }
         label { display: block; margin-top: 10px; font-size: 13px; font-weight: bold; opacity: 0.8; }
-        input, select { width: 100%; padding: 12px; margin-top: 5px; border-radius: 10px; border: 1px solid #ccc; box-sizing: border-box; font-size: 15px; background: white; color: black; }
+        input, select, textarea { width: 100%; padding: 12px; margin-top: 5px; border-radius: 10px; border: 1px solid #ccc; box-sizing: border-box; font-size: 15px; background: white; color: black; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .user-card { background: rgba(0,0,0,0.05); padding: 12px; border-radius: 10px; margin-bottom: 15px; border-left: 4px solid #248b65; color: var(--tg-theme-text-color); }
-        .total-box { background: #e8f5e9; padding: 15px; border-radius: 10px; margin-top: 15px; border: 1px solid #2e7d32; text-align: center; }
-        .days-badge { background: #248b65; color: white; padding: 2px 8px; border-radius: 5px; font-size: 12px; margin-left: 5px; }
+        .user-card { background: rgba(0,0,0,0.05); padding: 12px; border-radius: 10px; margin-bottom: 15px; border-left: 4px solid #248b65; }
+        .total-box { background: #f1f8e9; padding: 15px; border-radius: 10px; margin-top: 15px; border: 1px solid #2e7d32; }
+        .res-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 14px; color: #333; }
+        .final-sum { font-size: 20px; font-weight: bold; color: #2e7d32; text-align: center; margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 10px; }
         button { width: 100%; padding: 16px; background: #248b65; color: white; border: none; border-radius: 10px; margin-top: 20px; font-weight: bold; font-size: 16px; cursor: pointer; }
-        button:active { opacity: 0.8; }
     </style>
 </head>
 <body>
     <div class="user-card">
         <div id="user_display">Завантаження...</div>
     </div>
+
+    <label>Мета відрядження:</label>
+    <input type="text" id="purpose" placeholder="Наприклад: Сервісне обслуговування">
+
+    <label>Маршрут (звідки-куди):</label>
+    <input type="text" id="destination" placeholder="Київ - Кропивницький - Київ">
 
     <div class="grid">
         <div><label>Дата виїзду:</label><input type="date" id="date_start" onchange="calculate()"></div>
@@ -29,4 +35,86 @@
     <label>Вибір автомобіля:</label>
     <select id="car" onchange="calculate()">
         <option value="Opel Combo (KA1197MO)" data-cons="6.5" data-fuel="дизель">Opel Combo (6.5л, дизель)</option>
-        <option value="Toyota Corolla (KA4730AP
+        <option value="Toyota Corolla (KA4730AP)" data-cons="8.4" data-fuel="бензин">Toyota Corolla (8.4л, бензин)</option>
+        <option value="Renault Duster (KA0144РК)" data-cons="6.5" data-fuel="дизель">Renault Duster (6.5л, дизель)</option>
+    </select>
+
+    <div class="grid">
+        <div><label>Плановий км:</label><input type="number" id="km" value="0" oninput="calculate()"></div>
+        <div><label>Ціна грн/л:</label><input type="number" id="f_price" value="52" oninput="calculate()"></div>
+    </div>
+
+    <div class="grid">
+        <div><label>Проживання:</label><input type="number" id="hotel" value="0" oninput="calculate()"></div>
+        <div><label>Добові:</label><input type="number" id="per_diem" value="0" oninput="calculate()"></div>
+    </div>
+
+    <div class="total-box">
+        <div class="res-row"><span>Тривалість:</span> <b id="days_count">0</b> діб</div>
+        <div class="res-row"><span>Витрати ПММ:</span> <b id="fuel_res">0</b> грн</div>
+        <div class="final-sum">РАЗОМ: <span id="res">0</span> грн</div>
+    </div>
+
+    <button onclick="sendData()">💾 Зберегти план</button>
+
+    <script>
+        let tg = window.Telegram.WebApp;
+        tg.expand();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        let userData = JSON.parse(urlParams.get('user') || '{}');
+        if(userData.pib) {
+            document.getElementById('user_display').innerHTML = `👤 <b>${userData.pib}</b><br>💼 ${userData.posada} | ${userData.viddil}`;
+        }
+
+        let fuelResult = 0;
+        let diffDays = 0;
+
+        function calculate() {
+            // Розрахунок діб
+            const start = new Date(document.getElementById('date_start').value);
+            const end = new Date(document.getElementById('date_end').value);
+            if(start && end && end >= start) {
+                diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+            } else { diffDays = 0; }
+            document.getElementById('days_count').innerText = diffDays;
+
+            // Розрахунок ПММ
+            const km = parseFloat(document.getElementById('km').value) || 0;
+            const price = parseFloat(document.getElementById('f_price').value) || 0;
+            const sel = document.getElementById('car');
+            const cons = parseFloat(sel.options[sel.selectedIndex].dataset.cons);
+            
+            fuelResult = Math.round((km * cons / 100) * price);
+            document.getElementById('fuel_res').innerText = fuelResult;
+
+            // Загальна сума
+            const hotel = parseFloat(document.getElementById('hotel').value) || 0;
+            const pd = parseFloat(document.getElementById('per_diem').value) || 0;
+            const total = fuelResult + hotel + pd;
+            document.getElementById('res').innerText = total;
+        }
+
+        function sendData() {
+            const sel = document.getElementById('car');
+            const data = {
+                purpose: document.getElementById('purpose').value,
+                destination: document.getElementById('destination').value,
+                date_start: document.getElementById('date_start').value,
+                date_end: document.getElementById('date_end').value,
+                days: diffDays,
+                car: sel.value,
+                fuel_type: sel.options[sel.selectedIndex].dataset.fuel,
+                km: document.getElementById('km').value,
+                fuel_price: document.getElementById('f_price').value,
+                fuel_cost: fuelResult,
+                hotel: document.getElementById('hotel').value,
+                per_diem: document.getElementById('per_diem').value,
+                total: document.getElementById('res').innerText
+            };
+            tg.sendData(JSON.stringify(data));
+            tg.close();
+        }
+    </script>
+</body>
+</html>
