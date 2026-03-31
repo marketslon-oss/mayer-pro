@@ -2,16 +2,18 @@
 <html>
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; padding: 15px; background-color: var(--tg-theme-bg-color); color: var(--tg-theme-text-color); }
         label { display: block; margin-top: 10px; font-size: 13px; font-weight: bold; opacity: 0.8; }
-        input, select { width: 100%; padding: 12px; margin-top: 5px; border-radius: 10px; border: 1px solid #ccc; box-sizing: border-box; font-size: 15px; }
+        input, select { width: 100%; padding: 12px; margin-top: 5px; border-radius: 10px; border: 1px solid #ccc; box-sizing: border-box; font-size: 15px; background: white; color: black; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .user-card { background: rgba(0,0,0,0.05); padding: 12px; border-radius: 10px; margin-bottom: 15px; border-left: 4px solid #248b65; color: #333; }
+        .user-card { background: rgba(0,0,0,0.05); padding: 12px; border-radius: 10px; margin-bottom: 15px; border-left: 4px solid #248b65; color: var(--tg-theme-text-color); }
         .total-box { background: #e8f5e9; padding: 15px; border-radius: 10px; margin-top: 15px; border: 1px solid #2e7d32; text-align: center; }
         .days-badge { background: #248b65; color: white; padding: 2px 8px; border-radius: 5px; font-size: 12px; margin-left: 5px; }
-        button { width: 100%; padding: 16px; background: #248b65; color: white; border: none; border-radius: 10px; margin-top: 20px; font-weight: bold; font-size: 16px; }
+        button { width: 100%; padding: 16px; background: #248b65; color: white; border: none; border-radius: 10px; margin-top: 20px; font-weight: bold; font-size: 16px; cursor: pointer; }
+        button:active { opacity: 0.8; }
     </style>
 </head>
 <body>
@@ -27,79 +29,4 @@
     <label>Вибір автомобіля:</label>
     <select id="car" onchange="calculate()">
         <option value="Opel Combo (KA1197MO)" data-cons="6.5" data-fuel="дизель">Opel Combo (6.5л, дизель)</option>
-        <option value="Toyota Corolla (KA4730AP)" data-cons="8.4" data-fuel="бензин">Toyota Corolla (8.4л, бензин)</option>
-        <option value="Renault Duster (KA0144РК)" data-cons="6.5" data-fuel="дизель">Renault Duster (6.5л, дизель)</option>
-    </select>
-
-    <div class="grid">
-        <div><label>Плановий км:</label><input type="number" id="km" value="0" oninput="calculate()"></div>
-        <div><label>Ціна палива:</label><input type="number" id="f_price" value="52" oninput="calculate()"></div>
-    </div>
-
-    <div class="grid">
-        <div><label>Проживання:</label><input type="number" id="hotel" value="0" oninput="calculate()"></div>
-        <div><label>Добові:</label><input type="number" id="per_diem" value="0" oninput="calculate()"></div>
-    </div>
-
-    <div class="total-box">
-        <div style="font-size: 13px;">Тривалість: <span id="days_count" class="days-badge">0</span> діб</div>
-        <div style="font-weight: bold; margin-top: 5px; color: #2e7d32;">ПЛАНОВА СУМА: <span id="res" style="font-size: 20px;">0</span> грн</div>
-    </div>
-
-    <button onclick="sendData()">💾 Зберегти план</button>
-
-    <script>
-        let tg = window.Telegram.WebApp;
-        tg.expand();
-
-        const urlParams = new URLSearchParams(window.location.search);
-        const userData = JSON.parse(urlParams.get('user') || '{}');
-        if(userData.pib) {
-            document.getElementById('user_display').innerHTML = `👤 <b>${userData.pib}</b><br>💼 ${userData.posada}`;
-        }
-
-        let fuelOnly = 0;
-        let diffDays = 0;
-
-        function calculate() {
-            const start = new Date(document.getElementById('date_start').value);
-            const end = new Date(document.getElementById('date_end').value);
-            
-            if(start && end && end >= start) {
-                diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
-            } else { diffDays = 0; }
-            document.getElementById('days_count').innerText = diffDays;
-
-            const km = parseFloat(document.getElementById('km').value) || 0;
-            const price = parseFloat(document.getElementById('f_price').value) || 0;
-            const hotel = parseFloat(document.getElementById('hotel').value) || 0;
-            const pd = parseFloat(document.getElementById('per_diem').value) || 0;
-            
-            const sel = document.getElementById('car');
-            const cons = parseFloat(sel.options[sel.selectedIndex].dataset.cons);
-            
-            fuelOnly = Math.round((km * cons / 100) * price);
-            const total = fuelOnly + hotel + pd;
-            document.getElementById('res').innerText = total;
-        }
-
-        function sendData() {
-            const sel = document.getElementById('car');
-            let data = {
-                date_start: document.getElementById('date_start').value,
-                date_end: document.getElementById('date_end').value,
-                days: diffDays,
-                car: sel.value,
-                fuel_type: sel.options[sel.selectedIndex].dataset.fuel,
-                km: document.getElementById('km').value,
-                fuel_price: document.getElementById('f_price').value,
-                fuel_cost: fuelOnly,
-                hotel: document.getElementById('hotel').value,
-                per_diem: document.getElementById('per_diem').value,
-                total: document.getElementById('res').innerText
-            };
-            tg.sendData(JSON.stringify(data));
-        }
-    </script>
-</body>
-</html>
+        <option value="Toyota Corolla (KA4730AP
