@@ -8,25 +8,38 @@
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; color: #333; margin: 0; }
         .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .user-card { background: rgba(0,0,0,0.05); padding: 10px; border-radius: 8px; border-left: 4px solid #248b65; margin-bottom: 15px; font-size: 13px; }
+        .user-info-box { background: #eef2f3; padding: 10px; border-radius: 8px; border-left: 4px solid #248b65; margin-bottom: 15px; font-size: 13px; }
         label { display: block; font-weight: bold; margin-top: 8px; font-size: 12px; color: #555; }
         input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin-top: 4px; box-sizing: border-box; font-size: 14px; }
+        .readonly-input { background: #eee; color: #666; cursor: not-allowed; }
         .row { display: flex; gap: 8px; }
         .row > div { flex: 1; }
         .total { background: #e8f5e9; padding: 12px; border-radius: 8px; text-align: center; margin-top: 15px; border: 1px solid #2e7d32; color: #2e7d32; font-weight: bold; font-size: 18px; }
         button { width: 100%; padding: 14px; background: #4caf50; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; cursor: pointer; }
-        .hint { font-size: 11px; color: #888; margin-top: 2px; }
     </style>
 </head>
 <body>
     <div class="card">
-        <div class="user-card" id="user-info">Завантаження профілю...</div>
+        <div class="user-info-box">
+            <label>👤 ПІБ:</label>
+            <input type="text" id="user_name" class="readonly-input" readonly>
+            <div class="row">
+                <div>
+                    <label>💼 Посада:</label>
+                    <input type="text" id="user_role" class="readonly-input" readonly>
+                </div>
+                <div>
+                    <label>🏢 Відділ:</label>
+                    <input type="text" id="user_dept" class="readonly-input" readonly>
+                </div>
+            </div>
+        </div>
 
         <label>🎯 Мета відрядження:</label>
-        <input type="text" id="purpose" placeholder="Наприклад: Сервісне обслуговування">
+        <input type="text" id="purpose" placeholder="Мета поїздки">
 
         <label>📍 Маршрут:</label>
-        <input type="text" id="destination" placeholder="Місто - Об'єкт - Місто">
+        <input type="text" id="destination" placeholder="Звідки - Куди">
 
         <div class="row">
             <div>
@@ -42,14 +55,14 @@
         <div class="row">
             <div>
                 <label>🔢 Кількість діб:</label>
-                <input type="number" id="days_count" value="1" readonly style="background: #eee;">
+                <input type="number" id="days_count" value="1" class="readonly-input" readonly>
             </div>
             <div>
                 <label>🚗 Автомобіль:</label>
                 <select id="car_select" onchange="calculateFuel()">
-                    <option value="6.5">Opel Combo (6.5л/100км)</option>
-                    <option value="8.4">Toyota Corolla (8.4л/100км)</option>
-                    <option value="6.5">Renault Duster (6.5л/100км)</option>
+                    <option value="6.5">Opel Combo (6.5л)</option>
+                    <option value="8.4">Toyota Corolla (8.4л)</option>
+                    <option value="6.5">Renault Duster (6.5л)</option>
                 </select>
             </div>
         </div>
@@ -65,14 +78,14 @@
             </div>
         </div>
 
-        <div class="row" style="background: #f9f9f9; padding: 5px; border-radius: 8px; margin-top: 5px;">
+        <div class="row" style="background: #f9f9f9; padding: 5px; border-radius: 8px;">
             <div>
-                <label>⛽ Літри (авто):</label>
-                <input type="number" id="fuel_liters" value="0" readonly style="background: #eee;">
+                <label>⛽ Літри:</label>
+                <input type="number" id="fuel_liters" class="readonly-input" readonly>
             </div>
             <div>
                 <label>💵 Сума ПММ:</label>
-                <input type="number" id="fuel_sum" value="0" readonly style="background: #eee;">
+                <input type="number" id="fuel_sum" class="readonly-input" readonly>
             </div>
         </div>
 
@@ -82,23 +95,27 @@
                 <input type="number" id="hotel" value="0" oninput="calculateTotal()">
             </div>
             <div>
-                <label>🍔 Добові (1 добу):</label>
+                <label>🍔 Добові (1 доба):</label>
                 <input type="number" id="per_diem" value="600" oninput="calculateTotal()">
             </div>
         </div>
 
         <div class="total" id="total_display">РАЗОМ: 0 грн</div>
-        <button onclick="sendData()">💾 Зберегти та відправити</button>
+        <button onclick="sendData()">💾 Зберегти план</button>
     </div>
 
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
 
-        // Відображення даних водія
-        const user = tg.initDataUnsafe?.user;
-        if (user) {
-            document.getElementById('user-info').innerHTML = `<b>👤 ${user.first_name} ${user.last_name || ''}</b><br>ID: ${user.id}`;
+        // 1. ПІДТЯГУЄМО ДАНІ З ПОСИЛАННЯ (які передав бот)
+        const urlParams = new URLSearchParams(window.location.search);
+        const userDataStr = urlParams.get('user');
+        if (userDataStr) {
+            const userData = JSON.parse(decodeURIComponent(userDataStr));
+            document.getElementById('user_name').value = userData.pib || "";
+            document.getElementById('user_role').value = userData.posada || "";
+            document.getElementById('user_dept').value = userData.viddil || "";
         }
 
         function calculateDays() {
@@ -116,10 +133,8 @@
             const consumption = parseFloat(document.getElementById('car_select').value);
             const km = parseFloat(document.getElementById('planned_km').value) || 0;
             const price = parseFloat(document.getElementById('fuel_price').value) || 0;
-
             const liters = (km * consumption) / 100;
             const sum = liters * price;
-
             document.getElementById('fuel_liters').value = liters.toFixed(1);
             document.getElementById('fuel_sum').value = Math.round(sum);
             calculateTotal();
@@ -130,21 +145,22 @@
             const hotel = parseFloat(document.getElementById('hotel').value) || 0;
             const perDiem = parseFloat(document.getElementById('per_diem').value) || 0;
             const days = parseFloat(document.getElementById('days_count').value) || 0;
-            
             const total = fuelSum + hotel + (perDiem * days);
             document.getElementById('total_display').innerText = `РАЗОМ: ${Math.round(total)} грн`;
             return total;
         }
 
         function sendData() {
-            const carName = document.getElementById('car_select').options[document.getElementById('car_select').selectedIndex].text;
             const data = {
+                pib: document.getElementById('user_name').value,
+                posada: document.getElementById('user_role').value,
+                viddil: document.getElementById('user_dept').value,
                 purpose: document.getElementById('purpose').value,
                 destination: document.getElementById('destination').value,
                 date_start: document.getElementById('date_start').value,
                 date_end: document.getElementById('date_end').value,
                 days_count: document.getElementById('days_count').value,
-                car: carName,
+                car: document.getElementById('car_select').options[document.getElementById('car_select').selectedIndex].text,
                 planned_km: document.getElementById('planned_km').value,
                 fuel_price: document.getElementById('fuel_price').value,
                 fuel_liters: document.getElementById('fuel_liters').value,
