@@ -60,9 +60,9 @@
             <div>
                 <label>🚗 Автомобіль:</label>
                 <select id="car_select" onchange="calculateFuel()">
-                    <option value="6.5">Opel Combo (6.5л)</option>
-                    <option value="8.4">Toyota Corolla (8.4л)</option>
-                    <option value="6.5">Renault Duster (6.5л)</option>
+                    <option value="6.5">Opel Combo (6.5л/100км)</option>
+                    <option value="8.4">Toyota Corolla (8.4л/100км)</option>
+                    <option value="6.5">Renault Duster (6.5л/100км)</option>
                 </select>
             </div>
         </div>
@@ -73,14 +73,14 @@
                 <input type="number" id="planned_km" placeholder="0" oninput="calculateFuel()">
             </div>
             <div>
-                <label>💰 Ціна за літр (грн):</label>
+                <label>💰 Ціна грн/л:</label>
                 <input type="number" id="fuel_price" placeholder="Введіть ціну" oninput="calculateFuel()">
             </div>
         </div>
 
-        <div class="row" style="background: #f9f9f9; padding: 5px; border-radius: 8px;">
+        <div class="row" style="background: #f9f9f9; padding: 5px; border-radius: 8px; border: 1px dashed #ccc;">
             <div>
-                <label>⛽ Літри:</label>
+                <label>⛽ Літри (авто):</label>
                 <input type="number" id="fuel_liters" class="readonly-input" readonly>
             </div>
             <div>
@@ -95,7 +95,7 @@
                 <input type="number" id="hotel" placeholder="0" oninput="calculateTotal()">
             </div>
             <div>
-                <label>🍔 Добові (1 добу):</label>
+                <label>🍔 Добові (1 доба):</label>
                 <input type="number" id="per_diem" placeholder="Введіть суму" oninput="calculateTotal()">
             </div>
         </div>
@@ -108,6 +108,7 @@
         let tg = window.Telegram.WebApp;
         tg.expand();
 
+        // Отримання даних користувача з URL (переданих ботом)
         const urlParams = new URLSearchParams(window.location.search);
         const userDataStr = urlParams.get('user');
         if (userDataStr) {
@@ -116,24 +117,26 @@
                 document.getElementById('user_name').value = userData.pib || "";
                 document.getElementById('user_role').value = userData.posada || "";
                 document.getElementById('user_dept').value = userData.viddil || "";
-            } catch (e) { console.error("Error parsing user data", e); }
+            } catch (e) { console.error("Data error", e); }
         }
 
+        // Автоматичний розрахунок кількості діб
         function calculateDays() {
-            const startStr = document.getElementById('date_start').value;
-            const endStr = document.getElementById('date_end').value;
-            if (startStr && endStr) {
-                const start = new Date(startStr);
-                const end = new Date(endStr);
+            const startVal = document.getElementById('date_start').value;
+            const endVal = document.getElementById('date_end').value;
+            if (startVal && endVal) {
+                const start = new Date(startVal);
+                const end = new Date(endVal);
                 if (end >= start) {
-                    const diffTime = Math.abs(end - start);
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-                    document.getElementById('days_count').value = diffDays;
+                    const diff = Math.abs(end - start);
+                    const days = Math.ceil(diff / (1000 * 60 * 60 * 24)) + 1;
+                    document.getElementById('days_count').value = days;
                     calculateTotal();
                 }
             }
         }
 
+        // Розрахунок літрів та вартості пального
         function calculateFuel() {
             const consumption = parseFloat(document.getElementById('car_select').value);
             const km = parseFloat(document.getElementById('planned_km').value) || 0;
@@ -145,6 +148,7 @@
             calculateTotal();
         }
 
+        // Загальна сума (ПММ + Готель + (Добові * Дні))
         function calculateTotal() {
             const fuelSum = parseFloat(document.getElementById('fuel_sum').value) || 0;
             const hotel = parseFloat(document.getElementById('hotel').value) || 0;
@@ -155,6 +159,7 @@
             return total;
         }
 
+        // Відправка даних у бот
         function sendData() {
             const data = {
                 pib: document.getElementById('user_name').value,
