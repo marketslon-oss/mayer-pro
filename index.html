@@ -22,7 +22,7 @@
     <div class="card">
         <div class="user-info-box">
             <label>👤 ПІБ:</label>
-            <input type="text" id="user_name" class="readonly-input" readonly>
+            <input type="text" id="user_name" class="readonly-input" readonly placeholder="Завантаження...">
             <div class="row">
                 <div>
                     <label>💼 Посада:</label>
@@ -70,11 +70,11 @@
         <div class="row">
             <div>
                 <label>🛣️ Плановий км:</label>
-                <input type="number" id="planned_km" value="0" oninput="calculateFuel()">
+                <input type="number" id="planned_km" placeholder="0" oninput="calculateFuel()">
             </div>
             <div>
-                <label>💰 Ціна грн/л:</label>
-                <input type="number" id="fuel_price" value="52" oninput="calculateFuel()">
+                <label>💰 Ціна за літр (грн):</label>
+                <input type="number" id="fuel_price" placeholder="Введіть ціну" oninput="calculateFuel()">
             </div>
         </div>
 
@@ -92,11 +92,11 @@
         <div class="row">
             <div>
                 <label>🏨 Проживання:</label>
-                <input type="number" id="hotel" value="0" oninput="calculateTotal()">
+                <input type="number" id="hotel" placeholder="0" oninput="calculateTotal()">
             </div>
             <div>
-                <label>🍔 Добові (1 доба):</label>
-                <input type="number" id="per_diem" value="600" oninput="calculateTotal()">
+                <label>🍔 Добові (1 добу):</label>
+                <input type="number" id="per_diem" placeholder="Введіть суму" oninput="calculateTotal()">
             </div>
         </div>
 
@@ -108,24 +108,29 @@
         let tg = window.Telegram.WebApp;
         tg.expand();
 
-        // 1. ПІДТЯГУЄМО ДАНІ З ПОСИЛАННЯ (які передав бот)
         const urlParams = new URLSearchParams(window.location.search);
         const userDataStr = urlParams.get('user');
         if (userDataStr) {
-            const userData = JSON.parse(decodeURIComponent(userDataStr));
-            document.getElementById('user_name').value = userData.pib || "";
-            document.getElementById('user_role').value = userData.posada || "";
-            document.getElementById('user_dept').value = userData.viddil || "";
+            try {
+                const userData = JSON.parse(decodeURIComponent(userDataStr));
+                document.getElementById('user_name').value = userData.pib || "";
+                document.getElementById('user_role').value = userData.posada || "";
+                document.getElementById('user_dept').value = userData.viddil || "";
+            } catch (e) { console.error("Error parsing user data", e); }
         }
 
         function calculateDays() {
-            const start = new Date(document.getElementById('date_start').value);
-            const end = new Date(document.getElementById('date_end').value);
-            if (start && end && end >= start) {
-                const diffTime = Math.abs(end - start);
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-                document.getElementById('days_count').value = diffDays;
-                calculateTotal();
+            const startStr = document.getElementById('date_start').value;
+            const endStr = document.getElementById('date_end').value;
+            if (startStr && endStr) {
+                const start = new Date(startStr);
+                const end = new Date(endStr);
+                if (end >= start) {
+                    const diffTime = Math.abs(end - start);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                    document.getElementById('days_count').value = diffDays;
+                    calculateTotal();
+                }
             }
         }
 
@@ -144,7 +149,7 @@
             const fuelSum = parseFloat(document.getElementById('fuel_sum').value) || 0;
             const hotel = parseFloat(document.getElementById('hotel').value) || 0;
             const perDiem = parseFloat(document.getElementById('per_diem').value) || 0;
-            const days = parseFloat(document.getElementById('days_count').value) || 0;
+            const days = parseFloat(document.getElementById('days_count').value) || 1;
             const total = fuelSum + hotel + (perDiem * days);
             document.getElementById('total_display').innerText = `РАЗОМ: ${Math.round(total)} грн`;
             return total;
