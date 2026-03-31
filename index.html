@@ -3,150 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>План Кошторис v1.3</title>
+    <title>План Кошторис</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; color: #333; margin: 0; }
+        body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
         .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .user-info-box { background: #eef2f3; padding: 10px; border-radius: 8px; border-left: 4px solid #248b65; margin-bottom: 15px; font-size: 13px; }
+        .user-info { background: #eef2f3; padding: 10px; border-radius: 8px; margin-bottom: 10px; font-size: 13px; }
         label { display: block; font-weight: bold; margin-top: 8px; font-size: 12px; color: #555; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin-top: 4px; box-sizing: border-box; font-size: 14px; }
-        .readonly-input { background: #eee; color: #666; cursor: not-allowed; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin-top: 4px; box-sizing: border-box; }
         .row { display: flex; gap: 8px; }
         .row > div { flex: 1; }
-        .total { background: #e8f5e9; padding: 12px; border-radius: 8px; text-align: center; margin-top: 15px; border: 1px solid #2e7d32; color: #2e7d32; font-weight: bold; font-size: 20px; }
-        button { width: 100%; padding: 16px; background: #4caf50; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; cursor: pointer; transition: 0.3s; }
-        button:active { background: #388e3c; transform: scale(0.98); }
+        .total { background: #e8f5e9; padding: 12px; border-radius: 8px; text-align: center; margin-top: 15px; border: 1px solid #2e7d32; color: #2e7d32; font-weight: bold; font-size: 18px; }
+        button { width: 100%; padding: 15px; background: #4caf50; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; cursor: pointer; }
+        .readonly { background: #eee; }
     </style>
 </head>
 <body>
     <div class="card">
-        <div class="user-info-box">
-            <label>👤 ПІБ:</label>
-            <input type="text" id="user_name" class="readonly-input" readonly placeholder="Завантаження...">
-            <div class="row">
-                <div><label>💼 Посада:</label><input type="text" id="user_role" class="readonly-input" readonly></div>
-                <div><label>🏢 Відділ:</label><input type="text" id="user_dept" class="readonly-input" readonly></div>
-            </div>
+        <div class="user-info">
+            <b>ПІБ:</b> <span id="pib_text">...</span><br>
+            <b>Посада:</b> <span id="posada_text">...</span>
         </div>
 
         <label>🎯 Мета відрядження:</label>
-        <input type="text" id="purpose" placeholder="Наприклад: Ремонт техніки">
+        <input type="text" id="purpose" placeholder="Мета">
 
         <label>📍 Маршрут:</label>
-        <input type="text" id="destination" placeholder="Кропивницький - Київ - Кропивницький">
+        <input type="text" id="destination" placeholder="Звідки - Куди">
 
         <div class="row">
-            <div><label>📅 Виїзд:</label><input type="date" id="date_start" onchange="calculateDays()"></div>
-            <div><label>📅 Прибуття:</label><input type="date" id="date_end" onchange="calculateDays()"></div>
+            <div><label>📅 Виїзд:</label><input type="date" id="date_start" onchange="calculate()"></div>
+            <div><label>📅 Прибуття:</label><input type="date" id="date_end" onchange="calculate()"></div>
         </div>
 
         <div class="row">
-            <div><label>🔢 Кількість діб:</label><input type="number" id="days_count" value="1" class="readonly-input" readonly></div>
             <div>
-                <label>🚗 Автомобіль:</label>
-                <select id="car_select" onchange="calculateFuel()">
+                <label>🚗 Авто:</label>
+                <select id="car" onchange="calculate()">
                     <option value="6.5">Opel Combo (6.5л)</option>
                     <option value="8.4">Toyota Corolla (8.4л)</option>
                     <option value="6.5">Renault Duster (6.5л)</option>
                 </select>
             </div>
+            <div><label>🛣️ Плановий км:</label><input type="number" id="km" oninput="calculate()"></div>
         </div>
 
         <div class="row">
-            <div><label>🛣️ Плановий км:</label><input type="number" id="planned_km" placeholder="0" oninput="calculateFuel()"></div>
-            <div><label>💰 Ціна грн/л:</label><input type="number" id="fuel_price" placeholder="Ціна" oninput="calculateFuel()"></div>
-        </div>
-
-        <div class="row" style="background: #f9f9f9; padding: 5px; border-radius: 8px; border: 1px dashed #ccc; margin-top: 5px;">
-            <div><label>⛽ Літри:</label><input type="number" id="fuel_liters" class="readonly-input" readonly></div>
-            <div><label>💵 Сума ПММ:</label><input type="number" id="fuel_sum" class="readonly-input" readonly></div>
+            <div><label>💰 Ціна пального:</label><input type="number" id="price" oninput="calculate()"></div>
+            <div><label>🏨 Готель:</label><input type="number" id="hotel" oninput="calculate()"></div>
         </div>
 
         <div class="row">
-            <div><label>🏨 Проживання:</label><input type="number" id="hotel" placeholder="0" oninput="calculateTotal()"></div>
-            <div><label>🍔 Добові:</label><input type="number" id="per_diem" placeholder="Сума" oninput="calculateTotal()"></div>
+            <div><label>🍔 Добові (1 доба):</label><input type="number" id="per_diem" oninput="calculate()"></div>
+            <div><label>🔢 К-сть діб:</label><input type="number" id="days" class="readonly" readonly value="1"></div>
         </div>
 
         <div class="total" id="total_display">РАЗОМ: 0 грн</div>
-        <button onclick="sendData()">💾 Зберегти та відправити</button>
+        <button onclick="sendData()">💾 Зберегти план</button>
     </div>
 
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
 
-        // Отримання даних з URL
         const urlParams = new URLSearchParams(window.location.search);
-        const userDataStr = urlParams.get('user');
-        if (userDataStr) {
-            try {
-                const userData = JSON.parse(decodeURIComponent(userDataStr));
-                document.getElementById('user_name').value = userData.pib || "";
-                document.getElementById('user_role').value = userData.posada || "";
-                document.getElementById('user_dept').value = userData.viddil || "";
-            } catch (e) { console.error("URL Data Error", e); }
-        }
+        const user = JSON.parse(decodeURIComponent(urlParams.get('user') || '{}'));
+        document.getElementById('pib_text').innerText = user.pib || 'Невідомо';
+        document.getElementById('posada_text').innerText = user.posada || 'Невідома';
 
-        function calculateDays() {
-            const s = document.getElementById('date_start').value;
-            const e = document.getElementById('date_end').value;
-            if (s && e) {
-                const start = new Date(s);
-                const end = new Date(e);
-                const diff = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24)) + 1;
-                document.getElementById('days_count').value = diff > 0 ? diff : 1;
-                calculateTotal();
+        function calculate() {
+            const start = new Date(document.getElementById('date_start').value);
+            const end = new Date(document.getElementById('date_end').value);
+            let days = 1;
+            if (start && end && end >= start) {
+                days = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24)) + 1;
             }
-        }
+            document.getElementById('days').value = days;
 
-        function calculateFuel() {
-            const km = parseFloat(document.getElementById('planned_km').value) || 0;
-            const price = parseFloat(document.getElementById('fuel_price').value) || 0;
-            const cons = parseFloat(document.getElementById('car_select').value);
-            const liters = (km * cons) / 100;
-            document.getElementById('fuel_liters').value = liters.toFixed(1);
-            document.getElementById('fuel_sum').value = Math.round(liters * price);
-            calculateTotal();
-        }
-
-        function calculateTotal() {
-            const fuel = parseFloat(document.getElementById('fuel_sum').value) || 0;
+            const km = parseFloat(document.getElementById('km').value) || 0;
+            const price = parseFloat(document.getElementById('price').value) || 0;
+            const cons = parseFloat(document.getElementById('car').value);
             const hotel = parseFloat(document.getElementById('hotel').value) || 0;
-            const diet = parseFloat(document.getElementById('per_diem').value) || 0;
-            const days = parseFloat(document.getElementById('days_count').value) || 1;
-            const res = fuel + hotel + (diet * days);
-            document.getElementById('total_display').innerText = `РАЗОМ: ${Math.round(res)} грн`;
-            return Math.round(res);
+            const perDiem = parseFloat(document.getElementById('per_diem').value) || 0;
+
+            const fuelSum = (km * cons / 100) * price;
+            const total = fuelSum + hotel + (perDiem * days);
+
+            document.getElementById('total_display').innerText = `РАЗОМ: ${Math.round(total)} грн`;
+            return { total: Math.round(total), fuelSum: Math.round(fuelSum), fuelLiters: (km * cons / 100).toFixed(1), days };
         }
 
         function sendData() {
+            const res = calculate();
             const data = {
-                pib: document.getElementById('user_name').value,
-                posada: document.getElementById('user_role').value,
-                viddil: document.getElementById('user_dept').value,
+                pib: user.pib,
                 purpose: document.getElementById('purpose').value,
                 destination: document.getElementById('destination').value,
                 date_start: document.getElementById('date_start').value,
                 date_end: document.getElementById('date_end').value,
-                days_count: document.getElementById('days_count').value,
-                car: document.getElementById('car_select').options[document.getElementById('car_select').selectedIndex].text,
-                planned_km: document.getElementById('planned_km').value,
-                fuel_price: document.getElementById('fuel_price').value,
-                fuel_liters: document.getElementById('fuel_liters').value,
-                fuel_sum: document.getElementById('fuel_sum').value,
+                days_count: res.days,
+                car: document.getElementById('car').options[document.getElementById('car').selectedIndex].text,
+                planned_km: document.getElementById('km').value,
+                fuel_price: document.getElementById('price').value,
+                fuel_liters: res.fuelLiters,
+                fuel_sum: res.fuelSum,
                 hotel: document.getElementById('hotel').value,
                 per_diem: document.getElementById('per_diem').value,
-                total: calculateTotal()
+                total: res.total
             };
 
-            // Перевірка на заповнення
-            if (!data.purpose || !data.destination || !data.date_start) {
-                alert("Будь ласка, заповніть мету, маршрут та дати!");
-                return;
-            }
-
-            // ВІДПРАВКА В БОТ
+            if (!data.purpose || !data.destination) return alert("Заповніть мету та маршрут!");
             tg.sendData(JSON.stringify(data));
             tg.close();
         }
