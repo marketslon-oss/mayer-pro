@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Тест План Кошторис</title>
+    <title>План Кошторис</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
         .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .user-header { background: #f1f1f1; padding: 12px; border-radius: 10px; margin-bottom: 15px; font-size: 14px; border-left: 5px solid #71a95e; }
-        label { display: block; font-weight: bold; margin-top: 10px; font-size: 12px; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin-top: 4px; box-sizing: border-box; }
+        .user-header { background: #f1f1f1; padding: 12px; border-radius: 10px; margin-bottom: 15px; font-size: 13px; border-left: 5px solid #71a95e; }
+        label { display: block; font-weight: bold; margin-top: 10px; font-size: 11px; color: #555; text-transform: uppercase; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin-top: 4px; box-sizing: border-box; font-size: 14px; }
         .row { display: flex; gap: 10px; }
         .row > div { flex: 1; }
-        .gray-field { background: #f9f9f9; color: #555; font-weight: bold; }
+        .gray-field { background: #f9f9f9; color: #444; font-weight: bold; border: 1px dashed #bbb; }
         .total-box { background: #eef7ee; color: #2e7d32; border: 1px solid #2e7d32; padding: 12px; border-radius: 8px; text-align: center; margin-top: 15px; font-weight: bold; font-size: 18px; }
         .btn-save { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; cursor: pointer; }
     </style>
@@ -21,47 +21,46 @@
 <body>
     <div class="card">
         <div class="user-header">
-            <b>ПІБ:</b> <span id="pib">...</span><br>
+            <b>ПІБ:</b> <span id="pib">Завантаження...</span><br>
             <b>Посада:</b> <span id="posada">...</span><br>
             <b>Відділ:</b> <span id="viddil">...</span>
         </div>
 
-        <label>🎯 Мета відрядження:</label>
-        <input type="text" id="purpose" placeholder="Мета">
+        <label>🎯 МЕТА ВІДРЯДЖЕННЯ:</label>
+        <input type="text" id="purpose" placeholder="Введіть мету">
 
-        <label>📍 Маршрут:</label>
+        <label>📍 МАРШРУТ:</label>
         <input type="text" id="destination" placeholder="Звідки - Куди">
 
         <div class="row">
-            <div><label>📅 Виїзд:</label><input type="date" id="date_start" onchange="calculate()"></div>
-            <div><label>📅 Прибуття:</label><input type="date" id="date_end" onchange="calculate()"></div>
+            <div><label>📅 ВИЇЗД:</label><input type="date" id="date_start" onchange="calculate()"></div>
+            <div><label>📅 ПРИБУТТЯ:</label><input type="date" id="date_end" onchange="calculate()"></div>
+        </div>
+
+        <label>🚗 АВТОМОБІЛЬ:</label>
+        <select id="car" onchange="calculate()">
+            <option value="6.5">Opel Combo (KA1197MO) — 6.5л</option>
+            <option value="8.4">Toyota Corolla (KA4730AP) — 8.4л</option>
+            <option value="6.5">Renault Duster (KA0144РК) — 6.5л</option>
+        </select>
+
+        <div class="row">
+            <div><label>🗺️ ПЛАНОВИЙ КМ:</label><input type="number" id="km" value="0" oninput="calculate()"></div>
+            <div><label>💰 ЦІНА ПАЛЬНОГО:</label><input type="number" id="price" value="52" oninput="calculate()"></div>
         </div>
 
         <div class="row">
-            <div>
-                <label>🚗 Автомобіль:</label>
-                <select id="car" onchange="calculate()">
-                    <option value="6.5">Opel Combo (6.5л)</option>
-                    <option value="8.4">Toyota Corolla (8.4л)</option>
-                </select>
-            </div>
-            <div><label>🗺️ Плановий км:</label><input type="number" id="km" value="0" oninput="calculate()"></div>
+            <div><label>🔢 К-СТЬ ДІБ:</label><input type="number" id="days" class="gray-field" readonly value="1"></div>
+            <div><label>⛽ ЛІТРИ (АВТО):</label><input type="text" id="liters" class="gray-field" readonly value="0"></div>
         </div>
 
         <div class="row">
-            <div><label>💰 Ціна пального:</label><input type="number" id="price" value="52" oninput="calculate()"></div>
-            <div><label>🔢 К-сть діб:</label><input type="number" id="days" class="gray-field" readonly value="1"></div>
+            <div><label>💵 СУМА ПММ:</label><input type="text" id="fuel_sum" class="gray-field" readonly value="0"></div>
+            <div><label>🏨 ГОТЕЛЬ:</label><input type="number" id="hotel" value="0" oninput="calculate()"></div>
         </div>
 
-        <div class="row">
-            <div><label>⛽ Літри (авто):</label><input type="text" id="liters" class="gray-field" readonly value="0"></div>
-            <div><label>💵 Сума ПММ (грн):</label><input type="text" id="fuel_sum" class="gray-field" readonly value="0"></div>
-        </div>
-
-        <div class="row">
-            <div><label>🏨 Готель:</label><input type="number" id="hotel" value="0" oninput="calculate()"></div>
-            <div><label>🍔 Добові (1 доба):</label><input type="number" id="per_diem" value="600" oninput="calculate()"></div>
-        </div>
+        <label>🍔 ДОБОВІ (ЗА 1 ДОБУ):</label>
+        <input type="number" id="per_diem" value="600" oninput="calculate()">
 
         <div class="total-box" id="total_display">РАЗОМ: 0 грн</div>
         <button class="btn-save" onclick="sendData()">💾 Зберегти план</button>
@@ -70,27 +69,40 @@
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
+        tg.ready();
 
+        // Отримання даних користувача з URL
         const urlParams = new URLSearchParams(window.location.search);
-        const user = JSON.parse(decodeURIComponent(urlParams.get('user') || '{}'));
-        document.getElementById('pib').innerText = user.pib || '---';
+        let user = {};
+        try {
+            user = JSON.parse(decodeURIComponent(urlParams.get('user') || '{}'));
+        } catch (e) {
+            console.error("Помилка парсингу користувача", e);
+        }
+
+        // Виведення даних у шапку (ПІБ, Посада, Відділ)
+        document.getElementById('pib').innerText = user.pib || 'Не знайдено';
         document.getElementById('posada').innerText = user.posada || '---';
         document.getElementById('viddil').innerText = user.viddil || '---';
 
         function calculate() {
-            const start = new Date(document.getElementById('date_start').value);
-            const end = new Date(document.getElementById('date_end').value);
+            const startVal = document.getElementById('date_start').value;
+            const endVal = document.getElementById('date_end').value;
             let days = 1;
-            if (start && end && end >= start) {
-                days = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24)) + 1;
+            if (startVal && endVal) {
+                const s = new Date(startVal);
+                const e = new Date(endVal);
+                if (e >= s) {
+                    days = Math.ceil(Math.abs(e - s) / (1000 * 60 * 60 * 24)) + 1;
+                }
             }
             document.getElementById('days').value = days;
 
             const km = parseFloat(document.getElementById('km').value) || 0;
             const price = parseFloat(document.getElementById('price').value) || 0;
-            const cons = parseFloat(document.getElementById('car').value);
+            const consumption = parseFloat(document.getElementById('car').value);
             
-            const liters = (km * cons / 100).toFixed(1);
+            const liters = (km * consumption / 100).toFixed(1);
             const fuelSum = Math.round(liters * price);
             
             document.getElementById('liters').value = liters;
@@ -107,8 +119,6 @@
         function sendData() {
             const res = calculate();
             const data = {
-                pib: user.pib,
-                viddil: user.viddil,
                 purpose: document.getElementById('purpose').value,
                 destination: document.getElementById('destination').value,
                 date_start: document.getElementById('date_start').value,
