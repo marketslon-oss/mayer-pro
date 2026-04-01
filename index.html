@@ -25,8 +25,63 @@
             <b>Відділ:</b> <span id="viddil">...</span>
         </div>
 
-        <label>🎯 Мета відрядження:</label>
+        <label>🎯 МЕТА ВІДРЯДЖЕННЯ:</label>
         <input type="text" id="purpose" placeholder="Введіть мету">
 
-        <label>📍 Маршрут:</label>
-        <input type="
+        <label>📍 МАРШРУТ:</label>
+        <input type="text" id="destination" placeholder="Звідки - Куди">
+
+        <div class="row">
+            <div><label>📅 ВИЇЗД:</label><input type="date" id="date_start" onchange="calculate()"></div>
+            <div><label>📅 ПРИБУТТЯ:</label><input type="date" id="date_end" onchange="calculate()"></div>
+        </div>
+
+        <label>🚗 АВТОМОБІЛЬ:</label>
+        <select id="car" onchange="calculate()">
+            <option value="6.5">Opel Combo (KA1197MO) — 6.5л</option>
+            <option value="8.4">Toyota Corolla (KA4730AP) — 8.4л</option>
+            <option value="6.5">Renault Duster (KA0144РК) — 6.5л</option>
+        </select>
+
+        <div class="row">
+            <div><label>🗺️ ПЛАНОВИЙ КМ:</label><input type="number" id="km" value="0" oninput="calculate()"></div>
+            <div><label>💰 ЦІНА ПАЛЬНОГО:</label><input type="number" id="price" value="52" oninput="calculate()"></div>
+        </div>
+
+        <div class="row">
+            <div><label>🔢 К-СТЬ ДІБ:</label><input type="number" id="days" class="gray-field" readonly value="1"></div>
+            <div><label>⛽ ЛІТРИ (АВТО):</label><input type="text" id="liters" class="gray-field" readonly value="0"></div>
+        </div>
+
+        <div class="row">
+            <div><label>💵 СУМА ПММ:</label><input type="text" id="fuel_sum" class="gray-field" readonly value="0"></div>
+            <div><label>🏨 ГОТЕЛЬ:</label><input type="number" id="hotel" value="0" oninput="calculate()"></div>
+        </div>
+
+        <label>🍔 ДОБОВІ (ЗА 1 ДОБУ):</label>
+        <input type="number" id="per_diem" value="600" oninput="calculate()">
+
+        <div class="total-box" id="total_display">РАЗОМ: 0 грн</div>
+        <button class="btn-save" onclick="sendData()">💾 Зберегти план</button>
+    </div>
+
+    <script>
+        let tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.ready();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const user = JSON.parse(decodeURIComponent(urlParams.get('user') || '{}'));
+        document.getElementById('pib').innerText = user.pib || '---';
+        document.getElementById('viddil').innerText = user.viddil || '---';
+
+        function calculate() {
+            const startVal = document.getElementById('date_start').value;
+            const endVal = document.getElementById('date_end').value;
+            let days = 1;
+            
+            if (startVal && endVal) {
+                const s = new Date(startVal);
+                const e = new Date(endVal);
+                if (e >= s) {
+                    days
