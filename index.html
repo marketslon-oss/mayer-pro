@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Тест План Кошторис</title>
+    <title>План Кошторис</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
         .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .user-header { background: #f1f1f1; padding: 12px; border-radius: 10px; margin-bottom: 15px; font-size: 14px; border-left: 5px solid #71a95e; }
+        .user-header { background: #f1f1f1; padding: 12px; border-radius: 10px; margin-bottom: 15px; font-size: 13px; border-left: 5px solid #71a95e; }
         label { display: block; font-weight: bold; margin-top: 10px; font-size: 12px; }
         input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin-top: 4px; box-sizing: border-box; }
         .row { display: flex; gap: 10px; }
@@ -71,11 +71,15 @@
         let tg = window.Telegram.WebApp;
         tg.expand();
 
+        // КНОПКА НАЗАД (ПРОСТО ЗАКРИВАЄ WEBAPP)
+        tg.BackButton.show();
+        tg.BackButton.onClick(() => { tg.close(); });
+
         const urlParams = new URLSearchParams(window.location.search);
         const user = JSON.parse(decodeURIComponent(urlParams.get('user') || '{}'));
         document.getElementById('pib').innerText = user.pib || '---';
         document.getElementById('posada').innerText = user.posada || '---';
-        document.getElementById('viddil').innerText = user.viddil || '---'; // Відображення відділу
+        document.getElementById('viddil').innerText = user.viddil || '---';
 
         function calculate() {
             const start = new Date(document.getElementById('date_start').value);
@@ -88,9 +92,9 @@
 
             const km = parseFloat(document.getElementById('km').value) || 0;
             const price = parseFloat(document.getElementById('price').value) || 0;
-            const consumption = parseFloat(document.getElementById('car').value);
+            const cons = parseFloat(document.getElementById('car').value);
             
-            const liters = (km * consumption / 100).toFixed(1);
+            const liters = (km * cons / 100).toFixed(1);
             const fuelSum = Math.round(liters * price);
             
             document.getElementById('liters').value = liters;
@@ -107,8 +111,6 @@
         function sendData() {
             const res = calculate();
             const data = {
-                pib: user.pib,
-                viddil: user.viddil, // Передача відділу в бот
                 purpose: document.getElementById('purpose').value,
                 destination: document.getElementById('destination').value,
                 date_start: document.getElementById('date_start').value,
@@ -122,7 +124,6 @@
                 total: res.total
             };
             tg.sendData(JSON.stringify(data));
-            tg.close();
         }
     </script>
 </body>
