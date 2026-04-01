@@ -75,7 +75,7 @@
         const user = JSON.parse(decodeURIComponent(urlParams.get('user') || '{}'));
         document.getElementById('pib').innerText = user.pib || '---';
         document.getElementById('posada').innerText = user.posada || '---';
-        document.getElementById('viddil').innerText = user.viddil || '---'; // Відображення відділу
+        document.getElementById('viddil').innerText = user.viddil || '---';
 
         function calculate() {
             const start = new Date(document.getElementById('date_start').value);
@@ -88,9 +88,9 @@
 
             const km = parseFloat(document.getElementById('km').value) || 0;
             const price = parseFloat(document.getElementById('price').value) || 0;
-            const consumption = parseFloat(document.getElementById('car').value);
+            const cons = parseFloat(document.getElementById('car').value);
             
-            const liters = (km * consumption / 100).toFixed(1);
+            const liters = (km * cons / 100).toFixed(1);
             const fuelSum = Math.round(liters * price);
             
             document.getElementById('liters').value = liters;
@@ -108,7 +108,7 @@
             const res = calculate();
             const data = {
                 pib: user.pib,
-                viddil: user.viddil, // Передача відділу в бот
+                viddil: user.viddil,
                 purpose: document.getElementById('purpose').value,
                 destination: document.getElementById('destination').value,
                 date_start: document.getElementById('date_start').value,
