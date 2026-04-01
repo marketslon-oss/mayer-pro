@@ -22,12 +22,11 @@
     <div class="card">
         <div class="user-header">
             <b>ПІБ:</b> <span id="pib">...</span><br>
-            <b>Посада:</b> <span id="posada">...</span><br>
             <b>Відділ:</b> <span id="viddil">...</span>
         </div>
 
         <label>🎯 Мета відрядження:</label>
-        <input type="text" id="purpose" placeholder="Мета">
+        <input type="text" id="purpose" placeholder="Введіть мету">
 
         <label>📍 Маршрут:</label>
         <input type="text" id="destination" placeholder="Звідки - Куди">
@@ -37,31 +36,30 @@
             <div><label>📅 Прибуття:</label><input type="date" id="date_end" onchange="calculate()"></div>
         </div>
 
+        <label>🚗 Автомобіль:</label>
+        <select id="car" onchange="calculate()">
+            <option value="6.5">Opel Combo (KA1197MO) — 6.5л</option>
+            <option value="8.4">Toyota Corolla (KA4730AP) — 8.4л</option>
+            <option value="6.5">Renault Duster (KA0144РК) — 6.5л</option>
+        </select>
+
         <div class="row">
-            <div>
-                <label>🚗 Автомобіль:</label>
-                <select id="car" onchange="calculate()">
-                    <option value="6.5">Opel Combo (6.5л)</option>
-                    <option value="8.4">Toyota Corolla (8.4л)</option>
-                </select>
-            </div>
             <div><label>🗺️ Плановий км:</label><input type="number" id="km" value="0" oninput="calculate()"></div>
-        </div>
-
-        <div class="row">
             <div><label>💰 Ціна пального:</label><input type="number" id="price" value="52" oninput="calculate()"></div>
+        </div>
+
+        <div class="row">
             <div><label>🔢 К-сть діб:</label><input type="number" id="days" class="gray-field" readonly value="1"></div>
-        </div>
-
-        <div class="row">
             <div><label>⛽ Літри (авто):</label><input type="text" id="liters" class="gray-field" readonly value="0"></div>
-            <div><label>💵 Сума ПММ:</label><input type="text" id="fuel_sum" class="gray-field" readonly value="0"></div>
         </div>
 
         <div class="row">
+            <div><label>💵 Сума ПММ:</label><input type="text" id="fuel_sum" class="gray-field" readonly value="0"></div>
             <div><label>🏨 Готель:</label><input type="number" id="hotel" value="0" oninput="calculate()"></div>
-            <div><label>🍔 Добові (1 доба):</label><input type="number" id="per_diem" value="600" oninput="calculate()"></div>
         </div>
+
+        <label>🍔 Добові (за 1 добу):</label>
+        <input type="number" id="per_diem" value="600" oninput="calculate()">
 
         <div class="total-box" id="total_display">РАЗОМ: 0 грн</div>
         <button class="btn-save" onclick="sendData()">💾 Зберегти план</button>
@@ -70,25 +68,21 @@
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
-        tg.ready(); // Повідомляємо Telegram, що ми готові
-
-        // Кнопка Назад
-        tg.BackButton.show();
-        tg.BackButton.onClick(() => { tg.close(); });
+        tg.ready();
 
         const urlParams = new URLSearchParams(window.location.search);
         const user = JSON.parse(decodeURIComponent(urlParams.get('user') || '{}'));
         document.getElementById('pib').innerText = user.pib || '---';
-        document.getElementById('posada').innerText = user.posada || '---';
         document.getElementById('viddil').innerText = user.viddil || '---';
 
         function calculate() {
-            const start = document.getElementById('date_start').value;
-            const end = document.getElementById('date_end').value;
+            const startVal = document.getElementById('date_start').value;
+            const endVal = document.getElementById('date_end').value;
             let days = 1;
-            if (start && end) {
-                const s = new Date(start);
-                const e = new Date(end);
+            
+            if (startVal && endVal) {
+                const s = new Date(startVal);
+                const e = new Date(endVal);
                 if (e >= s) {
                     days = Math.ceil(Math.abs(e - s) / (1000 * 60 * 60 * 24)) + 1;
                 }
@@ -114,28 +108,28 @@
         }
 
         function sendData() {
-            try {
-                const res = calculate();
-                const data = {
-                    purpose: document.getElementById('purpose').value,
-                    destination: document.getElementById('destination').value,
-                    date_start: document.getElementById('date_start').value,
-                    date_end: document.getElementById('date_end').value,
-                    days_count: res.days,
-                    car: document.getElementById('car').options[document.getElementById('car').selectedIndex].text,
-                    fuel_liters: res.liters,
-                    fuel_sum: res.fuelSum,
-                    hotel: document.getElementById('hotel').value,
-                    per_diem: document.getElementById('per_diem').value,
-                    total: res.total
-                };
+            const res = calculate();
+            const data = {
+                purpose: document.getElementById('purpose').value,
+                destination: document.getElementById('destination').value,
+                date_start: document.getElementById('date_start').value,
+                date_end: document.getElementById('date_end').value,
+                days_count: res.days,
+                car: document.getElementById('car').options[document.getElementById('car').selectedIndex].text,
+                fuel_liters: res.liters,
+                fuel_sum: res.fuelSum,
+                hotel: document.getElementById('hotel').value,
+                per_diem: document.getElementById('per_diem').value,
+                total: res.total
+            };
 
-                // ВАЖЛИВО: цей рядок передає дані боту
-                tg.sendData(JSON.stringify(data));
-                tg.close(); // Закриваємо форму
-            } catch (err) {
-                alert("Помилка відправки: " + err.message);
+            if (!data.purpose || !data.destination) {
+                alert("Заповніть мету та маршрут!");
+                return;
             }
+
+            tg.sendData(JSON.stringify(data));
+            tg.close();
         }
     </script>
 </body>
