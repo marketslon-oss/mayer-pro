@@ -71,19 +71,18 @@
         tg.expand();
         tg.ready();
 
-        // Отримання даних користувача з URL
+        // ВИПРАВЛЕННЯ: Отримуємо дані безпосередньо з параметрів URL
         const urlParams = new URLSearchParams(window.location.search);
-        let user = {};
-        try {
-            user = JSON.parse(decodeURIComponent(urlParams.get('user') || '{}'));
-        } catch (e) {
-            console.error("Помилка парсингу користувача", e);
-        }
+        
+        // Зчитуємо pib, pos, vid так, як їх надсилає buttons.py
+        const userPib = urlParams.get('pib') || 'Не знайдено';
+        const userPos = urlParams.get('pos') || '---';
+        const userVid = urlParams.get('vid') || '---';
 
-        // Виведення даних у шапку (ПІБ, Посада, Відділ)
-        document.getElementById('pib').innerText = user.pib || 'Не знайдено';
-        document.getElementById('posada').innerText = user.posada || '---';
-        document.getElementById('viddil').innerText = user.viddil || '---';
+        // Виведення даних у шапку
+        document.getElementById('pib').innerText = userPib;
+        document.getElementById('posada').innerText = userPos;
+        document.getElementById('viddil').innerText = userVid;
 
         function calculate() {
             const startVal = document.getElementById('date_start').value;
@@ -119,6 +118,7 @@
         function sendData() {
             const res = calculate();
             const data = {
+                pib: document.getElementById('pib').innerText, // Додаємо ПІБ у звіт
                 purpose: document.getElementById('purpose').value,
                 destination: document.getElementById('destination').value,
                 date_start: document.getElementById('date_start').value,
