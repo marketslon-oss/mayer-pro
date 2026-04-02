@@ -11,11 +11,13 @@
         .user-header { background: #f1f1f1; padding: 12px; border-radius: 10px; margin-bottom: 15px; font-size: 13px; border-left: 5px solid #71a95e; }
         label { display: block; font-weight: bold; margin-top: 10px; font-size: 11px; color: #555; text-transform: uppercase; }
         input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin-top: 4px; box-sizing: border-box; font-size: 14px; }
-        .row { display: flex; gap: 10px; }
+        .row { display: flex; gap: 10px; align-items: flex-start; }
         .row > div { flex: 1; }
         .gray-field { background: #f9f9f9; color: #444; font-weight: bold; border: 1px dashed #bbb; }
         .total-box { background: #eef7ee; color: #2e7d32; border: 1px solid #2e7d32; padding: 12px; border-radius: 8px; text-align: center; margin-top: 15px; font-weight: bold; font-size: 18px; }
         .btn-save { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; cursor: pointer; }
+        .btn-upload { background: #5d8aa8; padding: 10px; font-size: 12px; margin-top: 5px; }
+        .status-text { font-size: 10px; color: gray; margin-top: 3px; text-align: center; }
     </style>
 </head>
 <body>
@@ -55,101 +57,4 @@
         </div>
 
         <div class="row">
-            <div><label>💵 СУМА ПММ:</label><input type="text" id="fuel_sum" class="gray-field" readonly value="0"></div>
-            <div><label>🏨 ГОТЕЛЬ:</label><input type="number" id="hotel" value="0" oninput="calculate()"></div>
-        </div>
-
-        <label>🍔 ДОБОВІ (ЗА 1 ДОБУ):</label>
-        <input type="number" id="per_diem" value="0" oninput="calculate()">
-
-        <div class="total-box" id="total_display">РАЗОМ: 0 грн</div>
-        <button class="btn-save" onclick="validateAndSend()">💾 Зберегти план</button>
-    </div>
-
-    <script>
-        let tg = window.Telegram.WebApp;
-        tg.expand();
-        tg.ready();
-
-        const urlParams = new URLSearchParams(window.location.search);
-        document.getElementById('pib').innerText = urlParams.get('pib') || 'Не знайдено';
-        document.getElementById('posada').innerText = urlParams.get('pos') || '---';
-        document.getElementById('viddil').innerText = urlParams.get('vid') || '---';
-
-        function calculate() {
-            const startVal = document.getElementById('date_start').value;
-            const endVal = document.getElementById('date_end').value;
-            let days = 1;
-            if (startVal && endVal) {
-                const s = new Date(startVal);
-                const e = new Date(endVal);
-                if (e >= s) {
-                    days = Math.ceil(Math.abs(e - s) / (1000 * 60 * 60 * 24)) + 1;
-                }
-            }
-            document.getElementById('days').value = days;
-
-            const km = parseFloat(document.getElementById('km').value) || 0;
-            const price = parseFloat(document.getElementById('price').value) || 0;
-            const consumption = parseFloat(document.getElementById('car').value);
-            
-            const liters = (km * consumption / 100).toFixed(1);
-            const fuelSum = Math.round(liters * price);
-            
-            document.getElementById('liters').value = liters;
-            document.getElementById('fuel_sum').value = fuelSum;
-
-            const hotel = parseFloat(document.getElementById('hotel').value) || 0;
-            const perDiem = parseFloat(document.getElementById('per_diem').value) || 0;
-            const total = fuelSum + hotel + (perDiem * days);
-
-            document.getElementById('total_display').innerText = `РАЗОМ: ${Math.round(total)} грн`;
-            return { total: Math.round(total), fuelSum, liters, days };
-        }
-
-        function validateAndSend() {
-            const fields = [
-                { id: 'km', name: 'Плановий км' },
-                { id: 'price', name: 'Ціна пального' },
-                { id: 'per_diem', name: 'Добові' }
-            ];
-
-            let zeroFields = [];
-            fields.forEach(f => {
-                if (parseFloat(document.getElementById(f.id).value) === 0) {
-                    zeroFields.push(f.name);
-                }
-            });
-
-            if (zeroFields.length > 0) {
-                const confirmMsg = `Наступні поля дорівнюють 0: \n(${zeroFields.join(', ')}). \n\nВсе вірно?`;
-                if (confirm(confirmMsg)) {
-                    sendData();
-                }
-            } else {
-                sendData();
-            }
-        }
-
-        function sendData() {
-            const res = calculate();
-            const data = {
-                pib: document.getElementById('pib').innerText,
-                purpose: document.getElementById('purpose').value,
-                destination: document.getElementById('destination').value,
-                date_start: document.getElementById('date_start').value,
-                date_end: document.getElementById('date_end').value,
-                days_count: res.days,
-                car: document.getElementById('car').options[document.getElementById('car').selectedIndex].text,
-                fuel_liters: res.liters,
-                fuel_sum: res.fuelSum,
-                hotel: document.getElementById('hotel').value,
-                per_diem: document.getElementById('per_diem').value,
-                total: res.total
-            };
-            tg.sendData(JSON.stringify(data));
-            tg.close();
-        }
-    </script>
-</body>
-</html>
+            <div><label>💵 СУМА ПММ:</label><input type="text" id="fuel_sum" class="gray
