@@ -17,18 +17,17 @@
         .total-box { background: #eef7ee; color: #2e7d32; border: 1px solid #2e7d32; padding: 12px; border-radius: 8px; text-align: center; margin-top: 15px; font-weight: bold; font-size: 18px; }
         .btn-save { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; cursor: pointer; }
         .btn-upload { background: #5d8aa8; padding: 10px; font-size: 12px; margin-top: 5px; }
-        .status-text { font-size: 10px; color: gray; margin-top: 3px; text-align: center; }
     </style>
 </head>
 <body>
     <div class="card">
         <div class="user-header">
-            <b>ПІБ:</b> <span id="pib">Завантаження...</span> (Загрузка...)<br>
-            <b>Посада:</b> <span id="posada">...</span> (Должность: ...)<br>
-            <b>Відділ:</b> <span id="viddil">...</span> (Отдел: ...)
+            <b>ПІБ:</b> <span id="pib">Завантаження...</span><br>
+            <b>Посада:</b> <span id="posada">...</span><br>
+            <b>Відділ:</b> <span id="viddil">...</span>
         </div>
 
-        <label>🎯 МЕТА ВІДРЯДЖЕННЯ (ЦЕЛЬ КОМАНДИРОВКИ):</label>
+        <label>🎯 МЕТА ВІДРЯДЖЕННЯ:</label>
         <input type="text" id="purpose" placeholder="Введіть мету">
 
         <label>📍 МАРШРУТ:</label>
@@ -61,25 +60,23 @@
             <div><label>🏨 ГОТЕЛЬ:</label><input type="number" id="hotel" value="0" oninput="calculate()"></div>
         </div>
 
-        <label>🍔 ДОБОВІ (СУТОЧНЫЕ ЗА 1 ДОБУ):</label>
+        <label>🍔 ДОБОВІ (ЗА 1 ДОБУ):</label>
         <input type="number" id="per_diem" value="0" oninput="calculate()">
 
-        <label>📎 ДОДАТИ ДОКУМЕНТИ (ДОБАВИТЬ ДОКУМЕНТЫ):</label>
+        <label>📎 ДОДАТИ ДОКУМЕНТИ:</label>
         <div class="row">
             <div>
                 <button type="button" class="btn-save btn-upload" onclick="document.getElementById('file_input').click()">📁 ФАЙЛ</button>
-                <input type="file" id="file_input" style="display:none" onchange="updateStatus('file_status', this)">
-                <div id="file_status" class="status-text">Не обрано (Не выбрано)</div>
+                <input type="file" id="file_input" style="display:none">
             </div>
             <div>
                 <button type="button" class="btn-save btn-upload" onclick="document.getElementById('photo_input').click()">📷 ФОТО</button>
-                <input type="file" id="photo_input" accept="image/*" capture="camera" style="display:none" onchange="updateStatus('photo_status', this)">
-                <div id="photo_status" class="status-text">Не обрано (Не выбрано)</div>
+                <input type="file" id="photo_input" accept="image/*" capture="camera" style="display:none">
             </div>
         </div>
 
-        <div class="total-box" id="total_display">РАЗОМ (ИТОГО): 0 грн</div>
-        <button class="btn-save" onclick="sendData()">💾 Зберегти план (Сохранить план)</button>
+        <div class="total-box" id="total_display">РАЗОМ: 0 грн</div>
+        <button class="btn-save" onclick="sendData()">💾 Зберегти план</button>
     </div>
 
     <script>
@@ -87,18 +84,10 @@
         tg.expand();
         tg.ready();
 
-        // Відображення даних з URL
         const urlParams = new URLSearchParams(window.location.search);
         document.getElementById('pib').innerText = urlParams.get('pib') || 'Не знайдено';
         document.getElementById('posada').innerText = urlParams.get('pos') || '---';
         document.getElementById('viddil').innerText = urlParams.get('vid') || '---';
-
-        function updateStatus(id, input) {
-            if (input.files && input.files[0]) {
-                document.getElementById(id).innerText = "✅ " + input.files[0].name;
-                document.getElementById(id).style.color = "#71a95e";
-            }
-        }
 
         function calculate() {
             const startVal = document.getElementById('date_start').value;
@@ -125,7 +114,7 @@
 
             const hotel = parseFloat(document.getElementById('hotel').value) || 0;
             const perDiem = parseFloat(document.getElementById('per_diem').value) || 0;
-            const total = fuelSum + hotel + (perDiem * days);
+            const total = fuelSum + hotel + (per_diem * days);
 
             document.getElementById('total_display').innerText = `РАЗОМ: ${Math.round(total)} грн`;
             return { total: Math.round(total), fuelSum, liters, days };
@@ -133,12 +122,10 @@
 
         function sendData() {
             const res = calculate();
-            
-            // КОРЕКЦІЯ ДАТИ: перетворюємо 2026-04-02 -> 02.04.2026
             const formatDate = (dateStr) => {
                 if (!dateStr) return "";
-                const [year, month, day] = dateStr.split('-');
-                return `${day}.${month}.${year}`;
+                const [y, m, d] = dateStr.split('-');
+                return `${d}.${m}.${y}`;
             };
 
             const data = {
