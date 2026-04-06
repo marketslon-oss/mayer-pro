@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>План Кошторис v1.3</title> 
+    <title>План Кошторис v1.4</title> 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
@@ -13,6 +13,7 @@
         input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin-top: 4px; box-sizing: border-box; font-size: 14px; }
         .row { display: flex; gap: 10px; align-items: flex-start; }
         .row > div { flex: 1; }
+        .gray-field { background: #f9f9f9; color: #444; font-weight: bold; border: 1px dashed #bbb; }
         .total-box { background: #eef7ee; color: #2e7d32; border: 1px solid #2e7d32; padding: 12px; border-radius: 8px; text-align: center; margin-top: 15px; font-weight: bold; font-size: 18px; }
         .btn-save { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; cursor: pointer; }
     </style>
@@ -20,8 +21,9 @@
 <body>
     <div class="card">
         <div class="user-header">
-            <b>ПІБ:</b> <span id="pib">Завантаження...</span><br>
-            <b>Посада:</b> <span id="posada">...</span>
+            <b>ПІБ:</b> <span id="pib">...</span><br>
+            <b>Посада:</b> <span id="posada">...</span><br>
+            <b>Відділ:</b> <span id="viddil">...</span>
         </div>
 
         <label>🎯 МЕТА ВІДРЯДЖЕННЯ:</label>
@@ -48,6 +50,11 @@
         </div>
 
         <div class="row">
+            <div><label>⛽ ЛІТРИ ПММ:</label><input type="text" id="liters" class="gray-field" readonly value="0"></div>
+            <div><label>💵 СУМА ПММ:</label><input type="text" id="fuel_sum" class="gray-field" readonly value="0"></div>
+        </div>
+
+        <div class="row">
             <div><label>🏨 ГОТЕЛЬ:</label><input type="number" id="hotel" value="0" oninput="calculate()"></div>
             <div><label>🍔 ДОБОВІ (1 ДОБА):</label><input type="number" id="per_diem" value="0" oninput="calculate()"></div>
         </div>
@@ -63,6 +70,7 @@
         const urlParams = new URLSearchParams(window.location.search);
         document.getElementById('pib').innerText = urlParams.get('pib') || 'Користувач';
         document.getElementById('posada').innerText = urlParams.get('pos') || '---';
+        document.getElementById('viddil').innerText = urlParams.get('vid') || '---';
 
         function calculate() {
             const sVal = document.getElementById('date_start').value;
@@ -81,29 +89,32 @@
 
             let liters = (km * cons / 100).toFixed(1);
             let fuelSum = Math.round(parseFloat(liters) * price);
-            const total = fuelSum + hotel + (perDiem * days);
+            
+            document.getElementById('liters').value = liters;
+            document.getElementById('fuel_sum').value = fuelSum;
 
+            const total = fuelSum + hotel + (perDiem * days);
             document.getElementById('total_display').innerText = `РАЗОМ: ${Math.round(total)} грн`;
+            
             return { total: Math.round(total), liters, fuelSum, days };
         }
 
         function sendData(event) {
-            if (event) event.preventDefault(); // Запобігає зависанню кнопки
-
+            if (event) event.preventDefault();
             const res = calculate();
             const purp = document.getElementById('purpose').value.trim();
             const dest = document.getElementById('destination').value.trim();
             const kmVal = document.getElementById('km').value;
 
             if (!purp || !dest || kmVal == "0" || kmVal == "") {
-                if (!confirm("⚠️ Поля не заповнено! Все вірно? Зберегти?")) {
-                    return false; // Повертає до редагування
-                }
+                if (!confirm("⚠️ Поля не заповнено! Все вірно?")) return false;
             }
 
             const formatDate = (v) => v ? v.split('-').reverse().join('.') : "";
             const data = {
                 pib: document.getElementById('pib').innerText,
+                posada: document.getElementById('posada').innerText,
+                viddil: document.getElementById('viddil').innerText,
                 purpose: purp,
                 destination: dest,
                 date_start: formatDate(document.getElementById('date_start').value),
