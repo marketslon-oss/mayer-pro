@@ -13,10 +13,10 @@
         input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin-top: 4px; box-sizing: border-box; font-size: 14px; }
         .row { display: flex; gap: 10px; align-items: flex-start; }
         .row > div { flex: 1; }
-        .gray-field { background: #f9f9f9; color: #444; font-weight: bold; border: 1px dashed #bbb; }
+        .gray-field { background: #f9f9f9; color: #444; font-weight: bold; border: 1px dashed #bbb; pointer-events: none; }
         .total-box { background: #eef7ee; color: #2e7d32; border: 1px solid #2e7d32; padding: 12px; border-radius: 8px; text-align: center; margin-top: 15px; font-weight: bold; font-size: 18px; }
         .btn-save { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; cursor: pointer; }
-        .btn-upload { background: #5d8aa8; padding: 10px; font-size: 12px; margin-top: 5px; color: white; border: none; border-radius: 5px; width: 100%; cursor: pointer; }
+        .btn-upload { background: #5d8aa8; padding: 10px; font-size: 12px; margin-top: 5px; color: white; border: none; border-radius: 5px; width: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; }
     </style>
 </head>
 <body>
@@ -51,8 +51,8 @@
         </div>
 
         <div class="row">
-            <div><label>🔢 К-СТЬ ДІБ:</label><input type="number" id="days" class="gray-field" readonly value="1"></div>
-            <div><label>⛽ ЛІТРИ (АВТО):</label><input type="text" id="liters" class="gray-field" readonly value="0"></div>
+            <div><label>🔢 К-СТЬ ДІБ:</label><input type="number" id="days" class="gray-field" readonly value="0"></div>
+            <div><label>⛽ ЛІТРИ (АВТО):</label><input type="text" id="liters" class="gray-field" readonly value="0.0"></div>
         </div>
 
         <div class="row">
@@ -65,12 +65,18 @@
 
         <label>📎 ДОДАТИ ДОКУМЕНТИ:</label>
         <div class="row">
-            <div><button type="button" class="btn-upload" onclick="document.getElementById('f1').click()">📁 ФАЙЛ</button><input type="file" id="f1" style="display:none"></div>
-            <div><button type="button" class="btn-upload" onclick="document.getElementById('f2').click()">📷 ФОТО</button><input type="file" id="f2" accept="image/*" capture="camera" style="display:none"></div>
+            <div>
+                <button type="button" class="btn-upload" onclick="document.getElementById('f1').click()">📁 ФАЙЛ</button>
+                <input type="file" id="f1" style="display:none">
+            </div>
+            <div>
+                <button type="button" class="btn-upload" onclick="document.getElementById('f2').click()">📷 ФОТО</button>
+                <input type="file" id="f2" accept="image/*" capture="camera" style="display:none">
+            </div>
         </div>
 
         <div class="total-box" id="total_display">РАЗОМ: 0 грн</div>
-        <button class="btn-save" onclick="sendData(event)">💾 Зберегти план</button>
+        <button class="btn-save" id="saveBtn" onclick="sendData(event)">💾 Зберегти план</button>
     </div>
 
     <script>
@@ -91,7 +97,7 @@
             const hotel = parseFloat(document.getElementById('hotel').value) || 0;
             const perDiem = parseFloat(document.getElementById('per_diem').value) || 0;
 
-            let days = 1;
+            let days = 0;
             if (sVal && eVal) {
                 const s = new Date(sVal), e = new Date(eVal);
                 if (!isNaN(s) && !isNaN(e) && e >= s) {
@@ -113,17 +119,21 @@
         }
 
         function sendData(event) {
-            // Зупиняємо стандартну дію, щоб кнопка не блокувалася
-            if (event) event.preventDefault();
+            if (event) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+            }
 
             const res = calculate();
             const p = document.getElementById('purpose').value.trim();
             const d = document.getElementById('destination').value.trim();
             const k = document.getElementById('km').value;
 
+            // Якщо натиснули "Скасувати" у вікні confirm, просто виходимо
             if (!p || !d || k == "0" || k == "") {
-                const isConfirmed = confirm("⚠️ Поля не заповнено! Все вірно? Зберегти план?");
-                if (!isConfirmed) return false; 
+                if (!confirm("⚠️ Поля не заповнено! Все вірно? Зберегти план?")) {
+                    return false; 
+                }
             }
 
             const formatDate = (v) => v ? v.split('-').reverse().join('.') : "";
