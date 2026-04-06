@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>План Кошторис v2.4</title> 
+    <title>План Кошторис v2.5</title> 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
@@ -17,13 +17,14 @@
         .total-box { background: #eef7ee; color: #2e7d32; border: 1px solid #2e7d32; padding: 12px; border-radius: 8px; text-align: center; margin-top: 15px; font-weight: bold; font-size: 18px; }
         .btn-save { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; cursor: pointer; }
         .btn-upload { background: #5d8aa8; padding: 10px; font-size: 12px; margin-top: 5px; color: white; border: none; border-radius: 5px; width: 100%; cursor: pointer; }
+        /* Стиль для підсвітки помилок */
         .invalid { border: 2px solid #ff4d4d !important; background: #fff5f5 !important; }
     </style>
 </head>
 <body>
     <div class="card">
         <div class="user-header">
-            <b>ПІБ:</b> <span id="pib">...</span><br>
+            <b>ПІБ:</b> <span id="pib">Завантаження...</span><br>
             <b>Посада:</b> <span id="posada">...</span><br>
             <b>Відділ:</b> <span id="viddil">...</span>
         </div>
@@ -52,7 +53,7 @@
         </div>
 
         <div class="row">
-            <div><label>🔢 К-СТЬ ДІБ:</label><input type="number" id="days" class="gray-field" readonly value="0"></div>
+            <div><label>🔢 К-СТЬ ДІБ:</label><input type="number" id="days" class="gray-field" readonly value="1"></div>
             <div><label>⛽ ЛІТРИ (АВТО):</label><input type="text" id="liters" class="gray-field" readonly value="0"></div>
         </div>
 
@@ -71,7 +72,7 @@
         </div>
 
         <div class="total-box" id="total_display">РАЗОМ: 0 грн</div>
-        <button class="btn-save" id="main_btn" onclick="validateForm()">💾 Зберегти план</button>
+        <button class="btn-save" id="save_btn" onclick="checkBeforeSend()">💾 Зберегти план</button>
     </div>
 
     <script>
@@ -79,7 +80,7 @@
         tg.expand();
 
         const urlParams = new URLSearchParams(window.location.search);
-        document.getElementById('pib').innerText = urlParams.get('pib') || '---';
+        document.getElementById('pib').innerText = urlParams.get('pib') || 'Користувач';
         document.getElementById('posada').innerText = urlParams.get('pos') || '---';
         document.getElementById('viddil').innerText = urlParams.get('vid') || '---';
 
@@ -92,10 +93,12 @@
             const hotel = parseFloat(document.getElementById('hotel').value) || 0;
             const perDiem = parseFloat(document.getElementById('per_diem').value) || 0;
 
-            let days = 0;
+            let days = 1;
             if (sVal && eVal) {
                 const s = new Date(sVal), e = new Date(eVal);
-                if (e >= s) days = Math.ceil((e - s) / (1000 * 60 * 60 * 24)) + 1;
+                if (!isNaN(s) && !isNaN(e) && e >= s) {
+                    days = Math.ceil((e - s) / (1000 * 60 * 60 * 24)) + 1;
+                }
             }
             document.getElementById('days').value = days;
 
@@ -106,65 +109,81 @@
             document.getElementById('fuel_sum').value = fuelSum;
 
             const total = fuelSum + hotel + (perDiem * days);
-            document.getElementById('total_display').innerText = `РАЗОМ: ${total} грн`;
-            return { total, liters, fuelSum, days };
+            document.getElementById('total_display').innerText = `РАЗОМ: ${Math.round(total) || 0} грн`;
+            
+            return { total: Math.round(total) || 0, liters, fuelSum, days };
         }
 
-        function validateForm() {
-            const purp = document.getElementById('purpose');
-            const dest = document.getElementById('destination');
-            const km = document.getElementById('km');
-            const price = document.getElementById('price');
+        // НОВА ФУНКЦІЯ ПЕРЕВІРКИ (Замість завісаючих вікон)
+        function checkBeforeSend() {
+            const p = document.getElementById('purpose');
+            const d = document.getElementById('destination');
+            const k = document.getElementById('km');
+            const pr = document.getElementById('price');
 
-            [purp, dest, km, price].forEach(el => el.classList.remove('invalid'));
+            // Скидаємо підсвітку
+            [p, d, k, pr].forEach(el => el.classList.remove('invalid'));
 
-            let errs = [];
-            if (!purp.value.trim()) { purp.classList.add('invalid'); errs.push("Мету"); }
-            if (!dest.value.trim()) { dest.classList.add('invalid'); errs.push("Маршрут"); }
-            if (parseFloat(km.value) <= 0) { km.classList.add('invalid'); errs.push("Кілометраж"); }
-            if (parseFloat(price.value) <= 0) { price.classList.add('invalid'); errs.push("Ціну пального"); }
+            let errors = [];
+            if (!p.value.trim()) { p.classList.add('invalid'); errors.push("Мету"); }
+            if (!d.value.trim()) { d.classList.add('invalid'); errors.push("Маршрут"); }
+            if (parseFloat(k.value) <= 0) { k.classList.add('invalid'); errors.push("КМ"); }
+            if (parseFloat(pr.value) <= 0) { pr.classList.add('invalid'); errors.push("Ціну"); }
 
-            if (errs.length > 0) {
+            if (errors.length > 0) {
+                // ПОМИЛКА: Виводимо нативний Popup Telegram (не завісає)
                 tg.showPopup({
-                    title: 'Увага!',
-                    message: 'Заповніть: ' + errs.join(", "),
-                    buttons: [{type: 'ok', text: 'Гаразд'}]
+                    title: 'Увага! (Внимание!)',
+                    message: 'Поля не заповнено: ' + errors.join(", ") + '. Все одно зберегти?',
+                    buttons: [
+                        {id: 'yes', type: 'default', text: 'Так (Да)'},
+                        {id: 'no', type: 'destructive', text: 'Ні (Нет)'}
+                    ]
+                }, (buttonId) => {
+                    if (buttonId === 'yes') sendData();
                 });
-                return;
+            } else {
+                // ВСЕ ОК: Просто фінальне підтвердження
+                tg.showPopup({
+                    title: 'Підтвердження',
+                    message: 'Зберегти цей план кошторису?',
+                    buttons: [
+                        {id: 'yes', type: 'default', text: 'Зберегти'},
+                        {type: 'cancel', text: 'Скасувати'}
+                    ]
+                }, (buttonId) => {
+                    if (buttonId === 'yes') sendData();
+                });
             }
-
-            // ФУНКЦІЯ ТАК/НІ (Не підвішує форму)
-            tg.showPopup({
-                title: 'Підтвердження',
-                message: 'Зберегти цей план кошторису?',
-                buttons: [
-                    {id: 'yes', type: 'default', text: 'Так'},
-                    {id: 'no', type: 'destructive', text: 'Ні'}
-                ]
-            }, (buttonId) => {
-                if (buttonId === 'yes') {
-                    send();
-                }
-            });
         }
 
-        function send() {
-            const btn = document.getElementById('main_btn');
+        function sendData() {
+            const btn = document.getElementById('save_btn');
             btn.disabled = true;
-            btn.innerText = "Збереження...";
+            btn.innerText = "⏳...";
 
             const res = calculate();
+            const formatDate = (v) => v ? v.split('-').reverse().join('.') : "";
+
             const data = {
                 pib: document.getElementById('pib').innerText,
+                posada: document.getElementById('posada').innerText,
                 viddil: document.getElementById('viddil').innerText,
                 purpose: document.getElementById('purpose').value,
                 destination: document.getElementById('destination').value,
-                total: res.total,
+                date_start: formatDate(document.getElementById('date_start').value),
+                date_end: formatDate(document.getElementById('date_end').value),
+                car: document.getElementById('car').options[document.getElementById('car').selectedIndex].text,
                 km: document.getElementById('km').value,
+                price: document.getElementById('price').value,
+                days_count: res.days,
+                fuel_liters: res.liters,
                 fuel_sum: res.fuelSum,
-                days: res.days
+                hotel: document.getElementById('hotel').value,
+                per_diem: document.getElementById('per_diem').value,
+                total: res.total
             };
-
+            
             tg.sendData(JSON.stringify(data));
             setTimeout(() => { tg.close(); }, 500);
         }
