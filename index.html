@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>План Кошторис v1.5</title> 
+    <title>План Кошторис v1.6</title> 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
@@ -15,70 +15,67 @@
         .row > div { flex: 1; }
         .gray-field { background: #f9f9f9; color: #444; font-weight: bold; border: 1px dashed #bbb; }
         .total-box { background: #eef7ee; color: #2e7d32; border: 1px solid #2e7d32; padding: 12px; border-radius: 8px; text-align: center; margin-top: 15px; font-weight: bold; font-size: 18px; }
-        .btn-save { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; cursor: pointer; transition: 0.3s; }
+        .btn-save { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; cursor: pointer; }
         .btn-upload { background: #5d8aa8; padding: 10px; font-size: 12px; margin-top: 5px; color: white; border: none; border-radius: 5px; width: 100%; cursor: pointer; }
         
-        /* Червона рамка для порожніх полів */
-        .error-border { border: 2px solid #ff4d4d !important; background: #fff5f5; }
-        .error-msg { color: #ff4d4d; font-size: 10px; font-weight: bold; margin-top: 2px; display: none; }
-        
-        .btn-save:disabled { background: #999 !important; }
+        /* Стиль для підсвічування порожніх полів */
+        .invalid { border: 2px solid #ff4d4d !important; background: #fff5f5; }
     </style>
 </head>
 <body>
     <div class="card">
-        <div class="user-header">
-            <b>ПІБ:</b> <span id="pib">Завантаження...</span><br>
-            <b>Посада:</b> <span id="posada">...</span><br>
-            <b>Відділ:</b> <span id="viddil">...</span>
+        <div id="form-container">
+            <div class="user-header">
+                <b>ПІБ:</b> <span id="pib">Завантаження...</span><br>
+                <b>Посада:</b> <span id="posada">...</span><br>
+                <b>Відділ:</b> <span id="viddil">...</span>
+            </div>
+
+            <label>🎯 МЕТА ВІДРЯДЖЕННЯ:</label>
+            <input type="text" id="purpose" placeholder="Обов'язково заповніть">
+
+            <label>📍 МАРШРУТ:</label>
+            <input type="text" id="destination" placeholder="Звідки - Куди">
+
+            <div class="row">
+                <div><label>📅 ВИЇЗД:</label><input type="date" id="date_start" onchange="calculate()"></div>
+                <div><label>📅 ПРИБУТТЯ:</label><input type="date" id="date_end" onchange="calculate()"></div>
+            </div>
+
+            <label>🚗 АВТОМОБІЛЬ:</label>
+            <select id="car" onchange="calculate()">
+                <option value="6.5">Opel Combo (KA1197MO)</option>
+                <option value="8.4">Toyota Corolla (KA4730AP)</option>
+                <option value="6.5">Renault Duster (KA0144РК)</option>
+            </select>
+
+            <div class="row">
+                <div><label>🗺️ ПЛАНОВИЙ КМ:</label><input type="number" id="km" value="0" oninput="calculate()"></div>
+                <div><label>💰 ЦІНА ПАЛЬНОГО:</label><input type="number" id="price" value="0" oninput="calculate()"></div>
+            </div>
+
+            <div class="row">
+                <div><label>🔢 К-СТЬ ДІБ:</label><input type="number" id="days" class="gray-field" readonly value="0"></div>
+                <div><label>⛽ ЛІТРИ (АВТО):</label><input type="text" id="liters" class="gray-field" readonly value="0"></div>
+            </div>
+
+            <div class="row">
+                <div><label>💵 СУМА ПММ:</label><input type="text" id="fuel_sum" class="gray-field" readonly value="0"></div>
+                <div><label>🏨 ГОТЕЛЬ:</label><input type="number" id="hotel" value="0" oninput="calculate()"></div>
+            </div>
+
+            <label>🍔 ДОБОВІ (ЗА 1 ДОБУ):</label>
+            <input type="number" id="per_diem" value="0" oninput="calculate()">
+
+            <label>📎 ДОДАТИ ДОКУМЕНТИ:</label>
+            <div class="row">
+                <div><button type="button" class="btn-upload" onclick="document.getElementById('f1').click()">📁 ФАЙЛ</button><input type="file" id="f1" style="display:none"></div>
+                <div><button type="button" class="btn-upload" onclick="document.getElementById('f2').click()">📷 ФОТО</button><input type="file" id="f2" accept="image/*" capture="camera" style="display:none"></div>
+            </div>
+
+            <div class="total-box" id="total_display">РАЗОМ: 0 грн</div>
+            <button class="btn-save" id="main_btn" onclick="validateAndSend()">💾 Зберегти план</button>
         </div>
-
-        <label>🎯 МЕТА ВІДРЯДЖЕННЯ:</label>
-        <input type="text" id="purpose" placeholder="Введіть мету">
-        <div id="err_purpose" class="error-msg">Будь ласка, вкажіть мету!</div>
-
-        <label>📍 МАРШРУТ:</label>
-        <input type="text" id="destination" placeholder="Звідки - Куди">
-        <div id="err_dest" class="error-msg">Вкажіть маршрут!</div>
-
-        <div class="row">
-            <div><label>📅 ВИЇЗД:</label><input type="date" id="date_start" onchange="calculate()"></div>
-            <div><label>📅 ПРИБУТТЯ:</label><input type="date" id="date_end" onchange="calculate()"></div>
-        </div>
-
-        <label>🚗 АВТОМОБІЛЬ:</label>
-        <select id="car" onchange="calculate()">
-            <option value="6.5">Opel Combo (KA1197MO)</option>
-            <option value="8.4">Toyota Corolla (KA4730AP)</option>
-            <option value="6.5">Renault Duster (KA0144РК)</option>
-        </select>
-
-        <div class="row">
-            <div><label>🗺️ ПЛАНОВИЙ КМ:</label><input type="number" id="km" value="0" oninput="calculate()"></div>
-            <div><label>💰 ЦІНА ПАЛЬНОГО:</label><input type="number" id="price" value="0" oninput="calculate()"></div>
-        </div>
-
-        <div class="row">
-            <div><label>🔢 К-СТЬ ДІБ:</label><input type="number" id="days" class="gray-field" readonly value="0"></div>
-            <div><label>⛽ ЛІТРИ (АВТО):</label><input type="text" id="liters" class="gray-field" readonly value="0"></div>
-        </div>
-
-        <div class="row">
-            <div><label>💵 СУМА ПММ:</label><input type="text" id="fuel_sum" class="gray-field" readonly value="0"></div>
-            <div><label>🏨 ГОТЕЛЬ:</label><input type="number" id="hotel" value="0" oninput="calculate()"></div>
-        </div>
-
-        <label>🍔 ДОБОВІ (ЗА 1 ДОБУ):</label>
-        <input type="number" id="per_diem" value="0" oninput="calculate()">
-
-        <label>📎 ДОДАТИ ДОКУМЕНТИ:</label>
-        <div class="row">
-            <div><button type="button" class="btn-upload" onclick="document.getElementById('f1').click()">📁 ФАЙЛ</button><input type="file" id="f1" style="display:none"></div>
-            <div><button type="button" class="btn-upload" onclick="document.getElementById('f2').click()">📷 ФОТО</button><input type="file" id="f2" accept="image/*" capture="camera" style="display:none"></div>
-        </div>
-
-        <div class="total-box" id="total_display">РАЗОМ: 0 грн</div>
-        <button class="btn-save" id="save_btn" onclick="validateAndSend()">💾 Зберегти план</button>
     </div>
 
     <script>
@@ -121,50 +118,49 @@
         }
 
         function validateAndSend() {
+            // Отримуємо елементи
             const p = document.getElementById('purpose');
             const d = document.getElementById('destination');
             const k = document.getElementById('km');
             const pr = document.getElementById('price');
             
-            let isValid = true;
+            // Скидаємо попередню підсвітку
+            [p, d, k, pr].forEach(el => el.classList.remove('invalid'));
 
-            // Скидаємо помилки
-            [p, d, k, pr].forEach(el => el.classList.remove('error-border'));
-            document.querySelectorAll('.error-msg').forEach(m => m.style.display = 'none');
+            let errors = [];
 
-            // Перевірка (валідація)
-            if (!p.value.trim()) { p.classList.add('error-border'); document.getElementById('err_purpose').style.display = 'block'; isValid = false; }
-            if (!d.value.trim()) { d.classList.add('error-border'); document.getElementById('err_dest').style.display = 'block'; isValid = false; }
-            if (parseFloat(k.value) <= 0) { k.classList.add('error-border'); isValid = false; }
-            if (parseFloat(pr.value) <= 0) { pr.classList.add('error-border'); isValid = false; }
+            // Перевірка кожного поля
+            if (!p.value.trim()) { p.classList.add('invalid'); errors.push("Мета"); }
+            if (!d.value.trim()) { d.classList.add('invalid'); errors.push("Маршрут"); }
+            if (parseFloat(k.value) <= 0) { k.classList.add('invalid'); errors.push("КМ"); }
+            if (parseFloat(pr.value) <= 0) { pr.classList.add('invalid'); errors.push("Ціна пального"); }
 
-            if (!isValid) {
+            // Якщо є помилки — показуємо нативне вікно Telegram і зупиняємо відправку
+            if (errors.length > 0) {
+                tg.showAlert("⚠️ Будь ласка, заповніть виділені поля: " + errors.join(", "));
                 tg.HapticFeedback.notificationOccurred('error');
-                return; // Зупиняємо, якщо не заповнено
+                return; // КРИТИЧНО: зупиняє функцію, дані не підуть!
             }
 
-            sendFinalData();
-        }
-
-        function sendFinalData() {
-            const btn = document.getElementById('save_btn');
+            // Якщо все ок — відправляємо
+            const btn = document.getElementById('main_btn');
             btn.disabled = true;
-            btn.innerText = "⌛ Оброблено...";
+            btn.innerText = "⌛ Відправка...";
 
             const res = calculate();
             const formatDate = (v) => v ? v.split('-').reverse().join('.') : "";
 
-            const data = {
+            const resultData = {
                 pib: document.getElementById('pib').innerText,
                 posada: document.getElementById('posada').innerText,
                 viddil: document.getElementById('viddil').innerText,
-                purpose: document.getElementById('purpose').value.trim(),
-                destination: document.getElementById('destination').value.trim(),
+                purpose: p.value.trim(),
+                destination: d.value.trim(),
                 date_start: formatDate(document.getElementById('date_start').value),
                 date_end: formatDate(document.getElementById('date_end').value),
                 car: document.getElementById('car').options[document.getElementById('car').selectedIndex].text,
-                km: document.getElementById('km').value,
-                price: document.getElementById('price').value,
+                km: k.value,
+                price: pr.value,
                 days_count: res.days,
                 fuel_liters: res.liters,
                 fuel_sum: res.fuelSum,
@@ -172,13 +168,9 @@
                 per_diem: document.getElementById('per_diem').value,
                 total: res.total
             };
-            
-            tg.sendData(JSON.stringify(data));
-            
-            // Затримка 1 секунда, щоб телефон встиг "віддати" дані Telegram
-            setTimeout(() => {
-                tg.close();
-            }, 1000);
+
+            tg.sendData(JSON.stringify(resultData));
+            setTimeout(() => { tg.close(); }, 500);
         }
     </script>
 </body>
