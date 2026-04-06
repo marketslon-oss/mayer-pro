@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>План Кошторис v2.2</title> 
+    <title>План Кошторис v2.3</title> 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
@@ -13,33 +13,20 @@
         input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin-top: 4px; box-sizing: border-box; font-size: 14px; }
         .row { display: flex; gap: 10px; align-items: flex-start; }
         .row > div { flex: 1; }
+        .gray-field { background: #f9f9f9; color: #444; font-weight: bold; border: 1px dashed #bbb; border-radius: 8px; padding: 10px; margin-top: 4px; font-size: 14px; text-align: center; }
         .total-box { background: #eef7ee; color: #2e7d32; border: 1px solid #2e7d32; padding: 12px; border-radius: 8px; text-align: center; margin-top: 15px; font-weight: bold; font-size: 18px; }
         .btn-save { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; cursor: pointer; }
-        
-        /* Червоний блок помилки як на скріншоті */
-        #error_block { 
-            display: none; 
-            background: #fff5f5; 
-            color: #d32f2f; 
-            border: 1px solid #ffcccc; 
-            padding: 10px; 
-            border-radius: 8px; 
-            margin-top: 15px; 
-            font-size: 13px; 
-            font-weight: bold;
-            text-align: center;
-        }
-        .invalid { border: 2px solid #ff4d4d !important; background: #fff5f5; }
+        .invalid { border: 2px solid #ff4d4d !important; background: #fff5f5 !important; }
     </style>
 </head>
 <body>
     <div class="card">
         <div class="user-header">
-            <b>ПІБ:</b> <span id="pib">Завантаження...</span><br>
+            <b>ПІБ:</b> <span id="pib">Завантаження...</span> (<b>ФИО:</b> <span id="pib_ru">...</span>)<br>
             <b>Посада:</b> <span id="posada">...</span>
         </div>
 
-        <label>🎯 МЕТА ВІДРЯДЖЕННЯ:</label>
+        <label>🎯 МЕТА ВІДРЯДЖЕННЯ (ЦЕЛЬ):</label>
         <input type="text" id="purpose" placeholder="Введіть мету">
 
         <label>📍 МАРШРУТ:</label>
@@ -64,14 +51,12 @@
 
         <div class="row">
             <div><label>🏨 ГОТЕЛЬ:</label><input type="number" id="hotel" value="0" oninput="calculate()"></div>
-            <div><label>🍔 ДОБОВІ:</label><input type="number" id="per_diem" value="0" oninput="calculate()"></div>
+            <div><label>🍔 ДОБОВІ (1 ДОБА):</label><input type="number" id="per_diem" value="0" oninput="calculate()"></div>
         </div>
 
         <div class="total-box" id="total_display">РАЗОМ: 0 грн</div>
         
-        <div id="error_block">⚠️ Заповніть обов'язкові поля!</div>
-        
-        <button class="btn-save" onclick="checkAndConfirm()">💾 Зберегти план</button>
+        <button class="btn-save" id="main_btn" onclick="validateForm()">💾 Зберегти план</button>
     </div>
 
     <script>
@@ -79,74 +64,90 @@
         tg.expand();
 
         const urlParams = new URLSearchParams(window.location.search);
-        document.getElementById('pib').innerText = urlParams.get('pib') || 'Користувач';
-        document.getElementById('posada').innerText = urlParams.get('pos') || '---';
+        const pib = urlParams.get('pib') || 'Користувач';
+        document.getElementById('pib').innerText = pib;
+        document.getElementById('pib_ru').innerText = pib;
+        document.getElementById('posada').innerText = urlParams.get('pos') || 'Менеджер';
 
         function calculate() {
             const km = parseFloat(document.getElementById('km').value) || 0;
             const price = parseFloat(document.getElementById('price').value) || 0;
-            const carCons = parseFloat(document.getElementById('car').value) || 6.5;
+            const cons = parseFloat(document.getElementById('car').value) || 6.5;
             const hotel = parseFloat(document.getElementById('hotel').value) || 0;
             const perDiem = parseFloat(document.getElementById('per_diem').value) || 0;
-            
-            const sVal = document.getElementById('date_start').value;
-            const eVal = document.getElementById('date_end').value;
+
             let days = 0;
-            if (sVal && eVal) {
-                const s = new Date(sVal), e = new Date(eVal);
-                if (e >= s) days = Math.ceil((e - s) / (1000 * 60 * 60 * 24)) + 1;
+            const s = document.getElementById('date_start').value;
+            const e = document.getElementById('date_end').value;
+            if (s && e) {
+                const d1 = new Date(s), d2 = new Date(e);
+                if (d2 >= d1) days = Math.ceil((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
             }
 
-            let fuelSum = Math.round((km * carCons / 100) * price);
-            const total = fuelSum + hotel + (perDiem * days);
+            let fuel = Math.round((km * cons / 100) * price);
+            let total = fuel + hotel + (perDiem * days);
             document.getElementById('total_display').innerText = `РАЗОМ: ${total} грн`;
-            return { total, fuelSum, days };
+            return { total, fuel, days };
         }
 
-        function checkAndConfirm() {
-            const p = document.getElementById('purpose');
-            const d = document.getElementById('destination');
-            const k = document.getElementById('km');
-            const pr = document.getElementById('price');
-            const err = document.getElementById('error_block');
+        function validateForm() {
+            const purp = document.getElementById('purpose');
+            const dest = document.getElementById('destination');
+            const km = document.getElementById('km');
+            const price = document.getElementById('price');
 
-            // Скидаємо стилі
-            [p, d, k, pr].forEach(el => el.classList.remove('invalid'));
-            err.style.display = 'none';
+            // Очищення стилів
+            [purp, dest, km, price].forEach(el => el.classList.remove('invalid'));
 
-            let missing = [];
-            if (!p.value.trim()) { p.classList.add('invalid'); missing.push("Мету"); }
-            if (!d.value.trim()) { d.classList.add('invalid'); missing.push("Маршрут"); }
-            if (parseFloat(k.value) <= 0) { k.classList.add('invalid'); missing.push("Кілометраж"); }
-            if (parseFloat(pr.value) <= 0) { pr.classList.add('invalid'); missing.push("Ціну пального"); }
+            let errors = [];
+            if (!purp.value.trim()) { purp.classList.add('invalid'); errors.push("Мету (Цель)"); }
+            if (!dest.value.trim()) { dest.classList.add('invalid'); errors.push("Маршрут"); }
+            if (parseFloat(km.value) <= 0) { km.classList.add('invalid'); errors.push("Кілометраж (КМ)"); }
+            if (parseFloat(price.value) <= 0) { price.classList.add('invalid'); errors.push("Ціну пального (Цена)"); }
 
-            if (missing.length > 0) {
-                err.innerText = "⚠️ Заповніть: " + missing.join(", ");
-                err.style.display = 'block';
+            if (errors.length > 0) {
+                // Використовуємо нативний Popup Telegram, який не вішає форму
+                tg.showPopup({
+                    title: 'Увага! (Внимание!)',
+                    message: 'Будь ласка, заповніть: ' + errors.join(", "),
+                    buttons: [{type: 'ok', text: 'Зрозумів (Понял)'}]
+                });
                 tg.HapticFeedback.notificationOccurred('error');
                 return;
             }
 
-            // ЯКЩО ВСЕ ОК — ВИВОДИМО СПЛИВАЮЧЕ ВІКНО TELEGRAM
-            tg.showConfirm("У формі все вірно? Зберегти план?", (isConfirmed) => {
-                if (isConfirmed) {
-                    sendDataToServer();
+            // Якщо все добре — фінальне підтвердження
+            tg.showPopup({
+                title: 'Збереження',
+                message: 'Все вірно? Відправити план?',
+                buttons: [
+                    {id: 'save', type: 'default', text: '✅ Так (Да)'},
+                    {type: 'cancel', text: 'Скасувати'}
+                ]
+            }, (buttonId) => {
+                if (buttonId === 'save') {
+                    send();
                 }
             });
         }
 
-        function sendDataToServer() {
+        function send() {
+            const btn = document.getElementById('main_btn');
+            btn.disabled = true;
+            btn.innerText = "⏳...";
+
             const res = calculate();
             const data = {
                 pib: document.getElementById('pib').innerText,
                 purpose: document.getElementById('purpose').value,
                 destination: document.getElementById('destination').value,
-                km: document.getElementById('km').value,
                 total: res.total,
-                fuel_sum: res.fuelSum
+                km: document.getElementById('km').value,
+                fuel_sum: res.fuel
             };
+
             tg.sendData(JSON.stringify(data));
-            tg.close();
+            setTimeout(() => { tg.close(); }, 500);
         }
     </script>
 </body>
