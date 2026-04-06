@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>План Кошторис v1.4</title> 
+    <title>План Кошторис v1.5</title> 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
@@ -15,9 +15,14 @@
         .row > div { flex: 1; }
         .gray-field { background: #f9f9f9; color: #444; font-weight: bold; border: 1px dashed #bbb; }
         .total-box { background: #eef7ee; color: #2e7d32; border: 1px solid #2e7d32; padding: 12px; border-radius: 8px; text-align: center; margin-top: 15px; font-weight: bold; font-size: 18px; }
-        .btn-save { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; cursor: pointer; }
+        .btn-save { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; cursor: pointer; transition: 0.3s; }
         .btn-upload { background: #5d8aa8; padding: 10px; font-size: 12px; margin-top: 5px; color: white; border: none; border-radius: 5px; width: 100%; cursor: pointer; }
-        .btn-save:disabled { background: #999 !important; opacity: 0.6; }
+        
+        /* Червона рамка для порожніх полів */
+        .error-border { border: 2px solid #ff4d4d !important; background: #fff5f5; }
+        .error-msg { color: #ff4d4d; font-size: 10px; font-weight: bold; margin-top: 2px; display: none; }
+        
+        .btn-save:disabled { background: #999 !important; }
     </style>
 </head>
 <body>
@@ -30,9 +35,11 @@
 
         <label>🎯 МЕТА ВІДРЯДЖЕННЯ:</label>
         <input type="text" id="purpose" placeholder="Введіть мету">
+        <div id="err_purpose" class="error-msg">Будь ласка, вкажіть мету!</div>
 
         <label>📍 МАРШРУТ:</label>
         <input type="text" id="destination" placeholder="Звідки - Куди">
+        <div id="err_dest" class="error-msg">Вкажіть маршрут!</div>
 
         <div class="row">
             <div><label>📅 ВИЇЗД:</label><input type="date" id="date_start" onchange="calculate()"></div>
@@ -71,7 +78,7 @@
         </div>
 
         <div class="total-box" id="total_display">РАЗОМ: 0 грн</div>
-        <button class="btn-save" id="btn_save" onclick="sendData()">💾 Зберегти план</button>
+        <button class="btn-save" id="save_btn" onclick="validateAndSend()">💾 Зберегти план</button>
     </div>
 
     <script>
@@ -113,20 +120,46 @@
             return { total: Math.round(total) || 0, liters, fuelSum, days };
         }
 
-        function sendData() {
-            const btn = document.getElementById('btn_save');
+        function validateAndSend() {
+            const p = document.getElementById('purpose');
+            const d = document.getElementById('destination');
+            const k = document.getElementById('km');
+            const pr = document.getElementById('price');
+            
+            let isValid = true;
+
+            // Скидаємо помилки
+            [p, d, k, pr].forEach(el => el.classList.remove('error-border'));
+            document.querySelectorAll('.error-msg').forEach(m => m.style.display = 'none');
+
+            // Перевірка (валідація)
+            if (!p.value.trim()) { p.classList.add('error-border'); document.getElementById('err_purpose').style.display = 'block'; isValid = false; }
+            if (!d.value.trim()) { d.classList.add('error-border'); document.getElementById('err_dest').style.display = 'block'; isValid = false; }
+            if (parseFloat(k.value) <= 0) { k.classList.add('error-border'); isValid = false; }
+            if (parseFloat(pr.value) <= 0) { pr.classList.add('error-border'); isValid = false; }
+
+            if (!isValid) {
+                tg.HapticFeedback.notificationOccurred('error');
+                return; // Зупиняємо, якщо не заповнено
+            }
+
+            sendFinalData();
+        }
+
+        function sendFinalData() {
+            const btn = document.getElementById('save_btn');
             btn.disabled = true;
-            btn.innerText = "Відправка...";
+            btn.innerText = "⌛ Оброблено...";
 
             const res = calculate();
             const formatDate = (v) => v ? v.split('-').reverse().join('.') : "";
-            
+
             const data = {
                 pib: document.getElementById('pib').innerText,
                 posada: document.getElementById('posada').innerText,
                 viddil: document.getElementById('viddil').innerText,
-                purpose: document.getElementById('purpose').value.trim() || "-",
-                destination: document.getElementById('destination').value.trim() || "-",
+                purpose: document.getElementById('purpose').value.trim(),
+                destination: document.getElementById('destination').value.trim(),
                 date_start: formatDate(document.getElementById('date_start').value),
                 date_end: formatDate(document.getElementById('date_end').value),
                 car: document.getElementById('car').options[document.getElementById('car').selectedIndex].text,
@@ -140,16 +173,12 @@
                 total: res.total
             };
             
-            try {
-                tg.sendData(JSON.stringify(data));
-                // Даємо 500мс, щоб Telegram точно відправив дані в чат
-                setTimeout(() => {
-                    tg.close();
-                }, 500);
-            } catch (e) {
-                btn.disabled = false;
-                btn.innerText = "Помилка! Спробуйте ще";
-            }
+            tg.sendData(JSON.stringify(data));
+            
+            // Затримка 1 секунда, щоб телефон встиг "віддати" дані Telegram
+            setTimeout(() => {
+                tg.close();
+            }, 1000);
         }
     </script>
 </body>
