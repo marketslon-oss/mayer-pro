@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>План Кошторис v1.8</title> 
+    <title>План Кошторис v1.9</title> 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
@@ -17,6 +17,19 @@
         .total-box { background: #eef7ee; color: #2e7d32; border: 1px solid #2e7d32; padding: 12px; border-radius: 8px; text-align: center; margin-top: 15px; font-weight: bold; font-size: 18px; }
         .btn-save { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; cursor: pointer; }
         .btn-upload { background: #5d8aa8; padding: 10px; font-size: 12px; margin-top: 5px; color: white; border: none; border-radius: 5px; width: 100%; cursor: pointer; }
+        
+        /* Блок помилки зверху кнопки */
+        #error_summary { 
+            display: none; 
+            background: #fff5f5; 
+            color: #d32f2f; 
+            border: 1px solid #d32f2f; 
+            padding: 10px; 
+            border-radius: 8px; 
+            margin-top: 15px; 
+            font-size: 12px; 
+            font-weight: bold;
+        }
         .invalid { border: 2px solid #ff4d4d !important; background: #fff5f5 !important; }
     </style>
 </head>
@@ -71,6 +84,9 @@
         </div>
 
         <div class="total-box" id="total_display">РАЗОМ: 0 грн</div>
+        
+        <div id="error_summary"></div>
+        
         <button class="btn-save" id="main_btn" onclick="validateAndSend()">💾 Зберегти план</button>
     </div>
 
@@ -78,112 +94,90 @@
         let tg = window.Telegram.WebApp;
         tg.expand();
 
-        // Ініціалізація даних з URL
         const urlParams = new URLSearchParams(window.location.search);
         document.getElementById('pib').innerText = urlParams.get('pib') || 'Користувач';
         document.getElementById('posada').innerText = urlParams.get('pos') || '---';
         document.getElementById('viddil').innerText = urlParams.get('vid') || '---';
 
         function calculate() {
-            try {
-                const sVal = document.getElementById('date_start').value;
-                const eVal = document.getElementById('date_end').value;
-                const km = parseFloat(document.getElementById('km').value) || 0;
-                const price = parseFloat(document.getElementById('price').value) || 0;
-                const cons = parseFloat(document.getElementById('car').value) || 6.5;
-                const hotel = parseFloat(document.getElementById('hotel').value) || 0;
-                const perDiem = parseFloat(document.getElementById('per_diem').value) || 0;
+            const sVal = document.getElementById('date_start').value;
+            const eVal = document.getElementById('date_end').value;
+            const km = parseFloat(document.getElementById('km').value) || 0;
+            const price = parseFloat(document.getElementById('price').value) || 0;
+            const cons = parseFloat(document.getElementById('car').value) || 6.5;
+            const hotel = parseFloat(document.getElementById('hotel').value) || 0;
+            const perDiem = parseFloat(document.getElementById('per_diem').value) || 0;
 
-                let days = 0;
-                if (sVal && eVal) {
-                    const s = new Date(sVal), e = new Date(eVal);
-                    if (!isNaN(s) && !isNaN(e) && e >= s) {
-                        days = Math.ceil((e - s) / (1000 * 60 * 60 * 24)) + 1;
-                    }
+            let days = 0;
+            if (sVal && eVal) {
+                const s = new Date(sVal), e = new Date(eVal);
+                if (!isNaN(s) && !isNaN(e) && e >= s) {
+                    days = Math.ceil((e - s) / (1000 * 60 * 60 * 24)) + 1;
                 }
-                document.getElementById('days').value = days;
-
-                let liters = (km * cons / 100).toFixed(1);
-                let fuelSum = Math.round(parseFloat(liters) * price);
-                
-                document.getElementById('liters').value = liters;
-                document.getElementById('fuel_sum').value = fuelSum;
-
-                const total = fuelSum + hotel + (perDiem * days);
-                document.getElementById('total_display').innerText = `РАЗОМ: ${Math.round(total) || 0} грн`;
-                
-                return { total: Math.round(total) || 0, liters, fuelSum, days };
-            } catch (e) {
-                console.error("Помилка розрахунку:", e);
-                return { total: 0, liters: 0, fuelSum: 0, days: 0 };
             }
+            document.getElementById('days').value = days;
+            let liters = (km * cons / 100).toFixed(1);
+            let fuelSum = Math.round(parseFloat(liters) * price);
+            document.getElementById('liters').value = liters;
+            document.getElementById('fuel_sum').value = fuelSum;
+            const total = fuelSum + hotel + (perDiem * days);
+            document.getElementById('total_display').innerText = `РАЗОМ: ${Math.round(total) || 0} грн`;
+            return { total: Math.round(total) || 0, liters, fuelSum, days };
         }
 
         function validateAndSend() {
-            try {
-                // Отримуємо посилання на об'єкти (не значення!)
-                const elP = document.getElementById('purpose');
-                const elD = document.getElementById('destination');
-                const elK = document.getElementById('km');
-                const elPr = document.getElementById('price');
+            const errBox = document.getElementById('error_summary');
+            errBox.style.display = 'none';
+            errBox.innerText = '';
 
-                // Отримуємо значення
-                const valP = elP.value.trim();
-                const valD = elD.value.trim();
-                const valK = parseFloat(elK.value) || 0;
-                const valPr = parseFloat(elPr.value) || 0;
+            const p = document.getElementById('purpose');
+            const d = document.getElementById('destination');
+            const k = document.getElementById('km');
+            const pr = document.getElementById('price');
 
-                // Скидаємо помилки
-                [elP, elD, elK, elPr].forEach(el => el.classList.remove('invalid'));
+            [p, d, k, pr].forEach(el => el.classList.remove('invalid'));
 
-                let errorFields = [];
+            let errors = [];
+            if (!p.value.trim()) { p.classList.add('invalid'); errors.push("Мету"); }
+            if (!d.value.trim()) { d.classList.add('invalid'); errors.push("Маршрут"); }
+            if (parseFloat(k.value) <= 0) { k.classList.add('invalid'); errors.push("Кілометраж"); }
+            if (parseFloat(pr.value) <= 0) { pr.classList.add('invalid'); errors.push("Ціну пального"); }
 
-                // Перевірка кожного поля окремо
-                if (valP === "") { elP.classList.add('invalid'); errorFields.push("Мета"); }
-                if (valD === "") { elD.classList.add('invalid'); errorFields.push("Маршрут"); }
-                if (valK <= 0) { elK.classList.add('invalid'); errorFields.push("Кілометраж"); }
-                if (valPr <= 0) { elPr.classList.add('invalid'); errorFields.push("Ціна пального"); }
-
-                // Якщо є помилки - виходимо
-                if (errorFields.length > 0) {
-                    tg.showAlert("⚠️ Будь ласка, заповніть: " + errorFields.join(", "));
-                    return; // СТОП! Далі код не піде
-                }
-
-                // Якщо все добре - блокуємо кнопку і шлемо дані
-                const btn = document.getElementById('main_btn');
-                btn.disabled = true;
-                btn.innerText = "Збереження...";
-
-                const res = calculate();
-                const formatDate = (v) => v ? v.split('-').reverse().join('.') : "";
-
-                const finalData = {
-                    pib: document.getElementById('pib').innerText,
-                    posada: document.getElementById('posada').innerText,
-                    viddil: document.getElementById('viddil').innerText,
-                    purpose: valP,
-                    destination: valD,
-                    date_start: formatDate(document.getElementById('date_start').value),
-                    date_end: formatDate(document.getElementById('date_end').value),
-                    car: document.getElementById('car').options[document.getElementById('car').selectedIndex].text,
-                    km: valK.toString(),
-                    price: valPr.toString(),
-                    days_count: res.days,
-                    fuel_liters: res.liters,
-                    fuel_sum: res.fuelSum,
-                    hotel: document.getElementById('hotel').value,
-                    per_diem: document.getElementById('per_diem').value,
-                    total: res.total
-                };
-
-                tg.sendData(JSON.stringify(finalData));
-                setTimeout(() => { tg.close(); }, 500);
-
-            } catch (err) {
-                // Якщо десь в коді виникла помилка, показуємо її
-                alert("Помилка скрипта: " + err.message);
+            if (errors.length > 0) {
+                errBox.innerText = "⚠️ Заповніть: " + errors.join(", ");
+                errBox.style.display = 'block';
+                tg.HapticFeedback.notificationOccurred('error');
+                return; // СТОП - відправка не відбудеться
             }
+
+            // Тільки якщо помилок немає:
+            document.getElementById('main_btn').disabled = true;
+            document.getElementById('main_btn').innerText = "Збереження...";
+
+            const res = calculate();
+            const formatDate = (v) => v ? v.split('-').reverse().join('.') : "";
+
+            const data = {
+                pib: document.getElementById('pib').innerText,
+                posada: document.getElementById('posada').innerText,
+                viddil: document.getElementById('viddil').innerText,
+                purpose: p.value.trim(),
+                destination: d.value.trim(),
+                date_start: formatDate(document.getElementById('date_start').value),
+                date_end: formatDate(document.getElementById('date_end').value),
+                car: document.getElementById('car').options[document.getElementById('car').selectedIndex].text,
+                km: k.value,
+                price: pr.value,
+                days_count: res.days,
+                fuel_liters: res.liters,
+                fuel_sum: res.fuelSum,
+                hotel: document.getElementById('hotel').value,
+                per_diem: document.getElementById('per_diem').value,
+                total: res.total
+            };
+
+            tg.sendData(JSON.stringify(data));
+            setTimeout(() => { tg.close(); }, 500);
         }
     </script>
 </body>
