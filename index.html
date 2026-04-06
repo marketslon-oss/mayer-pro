@@ -13,10 +13,10 @@
         input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin-top: 4px; box-sizing: border-box; font-size: 14px; }
         .row { display: flex; gap: 10px; align-items: flex-start; }
         .row > div { flex: 1; }
-        .gray-field { background: #f9f9f9; color: #444; font-weight: bold; border: 1px dashed #bbb; pointer-events: none; }
+        .gray-field { background: #f9f9f9; color: #444; font-weight: bold; border: 1px dashed #bbb; }
         .total-box { background: #eef7ee; color: #2e7d32; border: 1px solid #2e7d32; padding: 12px; border-radius: 8px; text-align: center; margin-top: 15px; font-weight: bold; font-size: 18px; }
         .btn-save { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; cursor: pointer; }
-        .btn-upload { background: #5d8aa8; padding: 10px; font-size: 12px; margin-top: 5px; color: white; border: none; border-radius: 5px; width: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        .btn-upload { background: #5d8aa8; padding: 10px; font-size: 12px; margin-top: 5px; color: white; border: none; border-radius: 5px; width: 100%; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -52,7 +52,7 @@
 
         <div class="row">
             <div><label>🔢 К-СТЬ ДІБ:</label><input type="number" id="days" class="gray-field" readonly value="0"></div>
-            <div><label>⛽ ЛІТРИ (АВТО):</label><input type="text" id="liters" class="gray-field" readonly value="0.0"></div>
+            <div><label>⛽ ЛІТРИ (АВТО):</label><input type="text" id="liters" class="gray-field" readonly value="0"></div>
         </div>
 
         <div class="row">
@@ -65,18 +65,12 @@
 
         <label>📎 ДОДАТИ ДОКУМЕНТИ:</label>
         <div class="row">
-            <div>
-                <button type="button" class="btn-upload" onclick="document.getElementById('f1').click()">📁 ФАЙЛ</button>
-                <input type="file" id="f1" style="display:none">
-            </div>
-            <div>
-                <button type="button" class="btn-upload" onclick="document.getElementById('f2').click()">📷 ФОТО</button>
-                <input type="file" id="f2" accept="image/*" capture="camera" style="display:none">
-            </div>
+            <div><button type="button" class="btn-upload" onclick="document.getElementById('f1').click()">📁 ФАЙЛ</button><input type="file" id="f1" style="display:none"></div>
+            <div><button type="button" class="btn-upload" onclick="document.getElementById('f2').click()">📷 ФОТО</button><input type="file" id="f2" accept="image/*" capture="camera" style="display:none"></div>
         </div>
 
         <div class="total-box" id="total_display">РАЗОМ: 0 грн</div>
-        <button class="btn-save" id="saveBtn" onclick="sendData(event)">💾 Зберегти план</button>
+        <button class="btn-save" onclick="sendData(event)">💾 Зберегти план</button>
     </div>
 
     <script>
@@ -124,19 +118,21 @@
                 event.stopImmediatePropagation();
             }
 
-            const res = calculate();
             const p = document.getElementById('purpose').value.trim();
             const d = document.getElementById('destination').value.trim();
             const k = document.getElementById('km').value;
+            const pr = document.getElementById('price').value;
 
-            // Якщо натиснули "Скасувати" у вікні confirm, просто виходимо
-            if (!p || !d || k == "0" || k == "") {
+            // Перевірка ПЕРЕД відправкою
+            if (!p || !d || k == "0" || k == "" || pr == "0") {
                 if (!confirm("⚠️ Поля не заповнено! Все вірно? Зберегти план?")) {
                     return false; 
                 }
             }
 
+            const res = calculate();
             const formatDate = (v) => v ? v.split('-').reverse().join('.') : "";
+
             const data = {
                 pib: document.getElementById('pib').innerText,
                 posada: document.getElementById('posada').innerText,
@@ -147,7 +143,7 @@
                 date_end: formatDate(document.getElementById('date_end').value),
                 car: document.getElementById('car').options[document.getElementById('car').selectedIndex].text,
                 km: k,
-                price: document.getElementById('price').value,
+                price: pr,
                 days_count: res.days,
                 fuel_liters: res.liters,
                 fuel_sum: res.fuelSum,
