@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>План Кошторис v1.5</title> 
+    <title>План Кошторис v1.1</title> 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
@@ -22,7 +22,7 @@
 <body>
     <div class="card">
         <div class="user-header">
-            <b>ПІБ:</b> <span id="pib">...</span><br>
+            <b>ПІБ:</b> <span id="pib">Завантаження...</span><br>
             <b>Посада:</b> <span id="posada">...</span><br>
             <b>Відділ:</b> <span id="viddil">...</span>
         </div>
@@ -52,7 +52,7 @@
 
         <div class="row">
             <div><label>🔢 К-СТЬ ДІБ:</label><input type="number" id="days" class="gray-field" readonly value="1"></div>
-            <div><label>⛽ ЛІТРИ ПММ:</label><input type="text" id="liters" class="gray-field" readonly value="0"></div>
+            <div><label>⛽ ЛІТРИ (АВТО):</label><input type="text" id="liters" class="gray-field" readonly value="0"></div>
         </div>
 
         <div class="row">
@@ -94,7 +94,9 @@
             let days = 1;
             if (sVal && eVal) {
                 const s = new Date(sVal), e = new Date(eVal);
-                if (e >= s) days = Math.ceil((e - s) / (1000 * 60 * 60 * 24)) + 1;
+                if (!isNaN(s) && !isNaN(e) && e >= s) {
+                    days = Math.ceil((e - s) / (1000 * 60 * 60 * 24)) + 1;
+                }
             }
             document.getElementById('days').value = days;
 
@@ -105,13 +107,14 @@
             document.getElementById('fuel_sum').value = fuelSum;
 
             const total = fuelSum + hotel + (perDiem * days);
-            document.getElementById('total_display').innerText = `РАЗОМ: ${Math.round(total)} грн`;
+            document.getElementById('total_display').innerText = `РАЗОМ: ${Math.round(total) || 0} грн`;
             
-            return { total: Math.round(total), liters, fuelSum, days };
+            return { total: Math.round(total) || 0, liters, fuelSum, days };
         }
 
         function sendData(event) {
-            if (event) event.preventDefault(); // Щоб форма не зависала
+            // Зупиняємо стандартну дію, щоб кнопка не блокувалася
+            if (event) event.preventDefault();
 
             const res = calculate();
             const p = document.getElementById('purpose').value.trim();
@@ -119,9 +122,8 @@
             const k = document.getElementById('km').value;
 
             if (!p || !d || k == "0" || k == "") {
-                if (!confirm("⚠️ Поля не заповнено! Все вірно? Зберегти?")) {
-                    return false; 
-                }
+                const isConfirmed = confirm("⚠️ Поля не заповнено! Все вірно? Зберегти план?");
+                if (!isConfirmed) return false; 
             }
 
             const formatDate = (v) => v ? v.split('-').reverse().join('.') : "";
