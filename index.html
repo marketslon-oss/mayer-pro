@@ -119,18 +119,14 @@
         function sendData() {
             const res = calculate();
 
-            // --- КРИТИЧНА ПЕРЕВІРКА ТУТ ---
-            const purposeValue = document.getElementById('purpose').value.trim();
-            const destinationValue = document.getElementById('destination').value.trim();
-            const kmValue = document.getElementById('km').value;
+            // ПЕРЕВІРКА (Validation)
+            const p = document.getElementById('purpose').value.trim();
+            const d = document.getElementById('destination').value.trim();
+            const k = document.getElementById('km').value;
 
-            // Якщо хоч одне з цих полів пусте або КМ дорівнює 0
-            if (!purposeValue || !destinationValue || kmValue == "0" || kmValue == "") {
-                const isConfirmed = confirm("⚠️ Поля не заповнено (Мета, Маршрут або КМ).\n\nВсе вірно? Зберегти план як є?");
-                
-                if (!isConfirmed) {
-                    return; // Зупиняємо відправку, повертаємо до форми
-                }
+            if (!p || !d || k == "0" || k == "") {
+                const isConfirmed = confirm("⚠️ Поля не заповнено (Мета, Маршрут або КМ).\n\nВсе вірно? Зберегти план?");
+                if (!isConfirmed) return; 
             }
 
             const formatDate = (v) => v ? v.split('-').reverse().join('.') : "";
@@ -139,12 +135,12 @@
                 pib: document.getElementById('pib').innerText,
                 posada: document.getElementById('posada').innerText,
                 viddil: document.getElementById('viddil').innerText,
-                purpose: purposeValue,
-                destination: destinationValue,
+                purpose: p,
+                destination: d,
                 date_start: formatDate(document.getElementById('date_start').value),
                 date_end: formatDate(document.getElementById('date_end').value),
                 car: document.getElementById('car').options[document.getElementById('car').selectedIndex].text,
-                km: kmValue,
+                km: k,
                 price: document.getElementById('price').value,
                 days_count: res.days,
                 fuel_liters: res.liters,
