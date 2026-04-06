@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>План Кошторис v1.2</title> 
+    <title>План Кошторис v1.3</title> 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
@@ -13,7 +13,6 @@
         input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin-top: 4px; box-sizing: border-box; font-size: 14px; }
         .row { display: flex; gap: 10px; align-items: flex-start; }
         .row > div { flex: 1; }
-        .gray-field { background: #f9f9f9; color: #444; font-weight: bold; border: 1px dashed #bbb; }
         .total-box { background: #eef7ee; color: #2e7d32; border: 1px solid #2e7d32; padding: 12px; border-radius: 8px; text-align: center; margin-top: 15px; font-weight: bold; font-size: 18px; }
         .btn-save { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; cursor: pointer; }
     </style>
@@ -21,11 +20,11 @@
 <body>
     <div class="card">
         <div class="user-header">
-            <b>ПІБ:</b> <span id="pib">...</span><br>
+            <b>ПІБ:</b> <span id="pib">Завантаження...</span><br>
             <b>Посада:</b> <span id="posada">...</span>
         </div>
 
-        <label>🎯 МЕТА:</label>
+        <label>🎯 МЕТА ВІДРЯДЖЕННЯ:</label>
         <input type="text" id="purpose" placeholder="Введіть мету">
 
         <label>📍 МАРШРУТ:</label>
@@ -44,17 +43,17 @@
         </select>
 
         <div class="row">
-            <div><label>🗺️ КМ:</label><input type="number" id="km" value="0" oninput="calculate()"></div>
+            <div><label>🗺️ ПЛАНОВИЙ КМ:</label><input type="number" id="km" value="0" oninput="calculate()"></div>
             <div><label>💰 ЦІНА ПАЛЬНОГО:</label><input type="number" id="price" value="0" oninput="calculate()"></div>
         </div>
 
         <div class="row">
             <div><label>🏨 ГОТЕЛЬ:</label><input type="number" id="hotel" value="0" oninput="calculate()"></div>
-            <div><label>🍔 ДОБОВІ:</label><input type="number" id="per_diem" value="0" oninput="calculate()"></div>
+            <div><label>🍔 ДОБОВІ (1 ДОБА):</label><input type="number" id="per_diem" value="0" oninput="calculate()"></div>
         </div>
 
         <div class="total-box" id="total_display">РАЗОМ: 0 грн</div>
-        <button class="btn-save" onclick="sendData()">💾 Зберегти план</button>
+        <button class="btn-save" onclick="sendData(event)">💾 Зберегти план</button>
     </div>
 
     <script>
@@ -88,16 +87,17 @@
             return { total: Math.round(total), liters, fuelSum, days };
         }
 
-        function sendData() {
+        function sendData(event) {
+            if (event) event.preventDefault(); // Запобігає зависанню кнопки
+
             const res = calculate();
             const purp = document.getElementById('purpose').value.trim();
             const dest = document.getElementById('destination').value.trim();
             const kmVal = document.getElementById('km').value;
 
-            // ПЕРЕВІРКА (Обязательно спросит!)
             if (!purp || !dest || kmVal == "0" || kmVal == "") {
                 if (!confirm("⚠️ Поля не заповнено! Все вірно? Зберегти?")) {
-                    return; 
+                    return false; // Повертає до редагування
                 }
             }
 
