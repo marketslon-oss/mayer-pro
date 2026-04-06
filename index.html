@@ -118,4 +118,35 @@
             const d = document.getElementById('destination').value.trim();
             const k = document.getElementById('km').value;
 
-            if (!p || !d || k == "0" || k ==
+            if (!p || !d || k == "0" || k == "") {
+                if (!confirm("⚠️ Поля не заповнено! Все вірно? Зберегти?")) {
+                    return false; 
+                }
+            }
+
+            const formatDate = (v) => v ? v.split('-').reverse().join('.') : "";
+            const data = {
+                pib: document.getElementById('pib').innerText,
+                posada: document.getElementById('posada').innerText,
+                viddil: document.getElementById('viddil').innerText,
+                purpose: p,
+                destination: d,
+                date_start: formatDate(document.getElementById('date_start').value),
+                date_end: formatDate(document.getElementById('date_end').value),
+                car: document.getElementById('car').options[document.getElementById('car').selectedIndex].text,
+                km: k,
+                price: document.getElementById('price').value,
+                days_count: res.days,
+                fuel_liters: res.liters,
+                fuel_sum: res.fuelSum,
+                hotel: document.getElementById('hotel').value,
+                per_diem: document.getElementById('per_diem').value,
+                total: res.total
+            };
+            
+            tg.sendData(JSON.stringify(data));
+            tg.close();
+        }
+    </script>
+</body>
+</html>
