@@ -2,9 +2,8 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>План Кошторис v2.0</title> 
+    <title>План Кошторис v2.1</title> 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
@@ -17,33 +16,28 @@
         .gray-field { background: #f9f9f9; color: #444; font-weight: bold; border: 1px dashed #bbb; }
         .total-box { background: #eef7ee; color: #2e7d32; border: 1px solid #2e7d32; padding: 12px; border-radius: 8px; text-align: center; margin-top: 15px; font-weight: bold; font-size: 18px; }
         .btn-save { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; cursor: pointer; }
-        
-        /* Валідація без вікон */
-        .error-hint { color: #d32f2f; font-size: 10px; font-weight: bold; margin-top: 4px; display: none; }
         .invalid { border: 2px solid #ff4d4d !important; }
     </style>
 </head>
 <body>
     <div class="card">
         <div class="user-header">
-            <b>ПІБ:</b> <span id="pib">...</span> (<b>ПІБ:</b> <span id="pib_ru">...</span>)<br>
+            <b>ПІБ:</b> <span id="pib">Завантаження...</span> (<b>ФИО:</b> <span id="pib_ru">...</span>)<br>
             <b>Посада:</b> <span id="posada">...</span> (<b>Должность:</b> <span id="posada_ru">...</span>)
         </div>
 
         <label>🎯 МЕТА (ЦЕЛЬ):</label>
-        <input type="text" id="purpose">
-        <div id="err_p" class="error-hint">Заповніть мету! (Заполните цель!)</div>
+        <input type="text" id="purpose" placeholder="Введіть мету">
 
         <label>📍 МАРШРУТ:</label>
-        <input type="text" id="destination">
-        <div id="err_d" class="error-hint">Вкажіть маршрут! (Укажите маршрут!)</div>
+        <input type="text" id="destination" placeholder="Звідки - Куди">
 
         <div class="row">
             <div><label>📅 ВИЇЗД (ВЫЕЗД):</label><input type="date" id="date_start" onchange="calculate()"></div>
             <div><label>📅 ПРИБУТТЯ (ПРИБЫТИЕ):</label><input type="date" id="date_end" onchange="calculate()"></div>
         </div>
 
-        <label>🚗 АВТОМОБІЛЬ (АВТОМОБИЛЬ):</label>
+        <label>🚗 АВТОМОБІЛЬ (АВТО):</label>
         <select id="car" onchange="calculate()">
             <option value="6.5">Opel Combo (KA1197MO)</option>
             <option value="8.4">Toyota Corolla (KA4730AP)</option>
@@ -62,7 +56,7 @@
 
         <div class="total-box" id="total_display">РАЗОМ (ИТОГО): 0 грн</div>
         
-        <button class="btn-save" id="save_btn" onclick="fastSend()">💾 Зберегти (Сохранить)</button>
+        <button class="btn-save" id="save_btn" onclick="handleSave()">💾 Зберегти (Сохранить)</button>
     </div>
 
     <script>
@@ -70,9 +64,9 @@
         tg.expand();
 
         const urlParams = new URLSearchParams(window.location.search);
-        const name = urlParams.get('pib') || 'Користувач';
-        document.getElementById('pib').innerText = name;
-        document.getElementById('pib_ru').innerText = name;
+        const userName = urlParams.get('pib') || 'Користувач';
+        document.getElementById('pib').innerText = userName;
+        document.getElementById('pib_ru').innerText = userName;
         document.getElementById('posada').innerText = urlParams.get('pos') || '---';
 
         function calculate() {
@@ -93,47 +87,41 @@
             let fuelSum = Math.round((km * cons / 100) * price);
             const total = fuelSum + hotel + (perDiem * days);
             document.getElementById('total_display').innerText = `РАЗОМ: ${Math.round(total) || 0} грн`;
-            return { total, fuelSum, days };
+            return { total, fuelSum, days, km, price };
         }
 
-        function fastSend() {
-            const p = document.getElementById('purpose');
-            const d = document.getElementById('destination');
-            const k = document.getElementById('km');
-            
-            // Скидаємо помилки
-            p.classList.remove('invalid'); d.classList.remove('invalid'); k.classList.remove('invalid');
-            document.getElementById('err_p').style.display = 'none';
-            document.getElementById('err_d').style.display = 'none';
+        function handleSave() {
+            const p = document.getElementById('purpose').value.trim();
+            const d = document.getElementById('destination').value.trim();
+            const res = calculate();
 
-            // Тільки критична перевірка
-            let hasError = false;
-            if (!p.value.trim()) { p.classList.add('invalid'); document.getElementById('err_p').style.display = 'block'; hasError = true; }
-            if (!d.value.trim()) { d.classList.add('invalid'); document.getElementById('err_d').style.display = 'block'; hasError = true; }
-            if (parseFloat(k.value) <= 0) { k.classList.add('invalid'); hasError = true; }
-
-            if (hasError) {
-                tg.HapticFeedback.notificationOccurred('error');
+            // Перевірка на пусті обов'язкові поля
+            if (!p || !d || res.km <= 0 || res.price <= 0) {
+                // Використовуємо НАЙБІЛЬШ СТАБІЛЬНИЙ метод Telegram для повідомлень
+                tg.showPopup({
+                    title: 'Увага! (Внимание!)',
+                    message: 'Будь ласка, заповніть Мету, Маршрут, КМ та Ціну пального. (Пожалуйста, заполните Цель, Маршрут, КМ и Цену топлива.)',
+                    buttons: [{type: 'ok'}]
+                });
                 return;
             }
 
+            // Якщо все ок — відправляємо
             const btn = document.getElementById('save_btn');
             btn.disabled = true;
             btn.innerText = "⏳...";
 
-            const res = calculate();
             const data = {
-                pib: name,
-                purpose: p.value.trim(),
-                destination: d.value.trim(),
+                pib: userName,
+                purpose: p,
+                destination: d,
                 total: res.total,
-                km: k.value,
+                km: res.km,
                 fuel_sum: res.fuelSum
             };
 
             tg.sendData(JSON.stringify(data));
-            // Закриваємо миттєво, щоб не було відчуття зависання
-            tg.close();
+            setTimeout(() => { tg.close(); }, 500);
         }
     </script>
 </body>
