@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>План Кошторис v2.5</title> 
+    <title>План Кошторис v2.6</title> 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
@@ -17,8 +17,6 @@
         .total-box { background: #eef7ee; color: #2e7d32; border: 1px solid #2e7d32; padding: 12px; border-radius: 8px; text-align: center; margin-top: 15px; font-weight: bold; font-size: 18px; }
         .btn-save { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; cursor: pointer; }
         .btn-upload { background: #5d8aa8; padding: 10px; font-size: 12px; margin-top: 5px; color: white; border: none; border-radius: 5px; width: 100%; cursor: pointer; }
-        /* Стиль для підсвітки помилок */
-        .invalid { border: 2px solid #ff4d4d !important; background: #fff5f5 !important; }
     </style>
 </head>
 <body>
@@ -72,7 +70,7 @@
         </div>
 
         <div class="total-box" id="total_display">РАЗОМ: 0 грн</div>
-        <button class="btn-save" id="save_btn" onclick="checkBeforeSend()">💾 Зберегти план</button>
+        <button class="btn-save" id="main_btn" onclick="askBeforeSend()">💾 Зберегти план</button>
     </div>
 
     <script>
@@ -114,51 +112,33 @@
             return { total: Math.round(total) || 0, liters, fuelSum, days };
         }
 
-        // НОВА ФУНКЦІЯ ПЕРЕВІРКИ (Замість завісаючих вікон)
-        function checkBeforeSend() {
-            const p = document.getElementById('purpose');
-            const d = document.getElementById('destination');
-            const k = document.getElementById('km');
-            const pr = document.getElementById('price');
+        // КНОПКА ТАК/НІ (Popup Telegram)
+        function askBeforeSend() {
+            const p = document.getElementById('purpose').value.trim();
+            const d = document.getElementById('destination').value.trim();
+            const k = document.getElementById('km').value;
 
-            // Скидаємо підсвітку
-            [p, d, k, pr].forEach(el => el.classList.remove('invalid'));
-
-            let errors = [];
-            if (!p.value.trim()) { p.classList.add('invalid'); errors.push("Мету"); }
-            if (!d.value.trim()) { d.classList.add('invalid'); errors.push("Маршрут"); }
-            if (parseFloat(k.value) <= 0) { k.classList.add('invalid'); errors.push("КМ"); }
-            if (parseFloat(pr.value) <= 0) { pr.classList.add('invalid'); errors.push("Ціну"); }
-
-            if (errors.length > 0) {
-                // ПОМИЛКА: Виводимо нативний Popup Telegram (не завісає)
-                tg.showPopup({
-                    title: 'Увага! (Внимание!)',
-                    message: 'Поля не заповнено: ' + errors.join(", ") + '. Все одно зберегти?',
-                    buttons: [
-                        {id: 'yes', type: 'default', text: 'Так (Да)'},
-                        {id: 'no', type: 'destructive', text: 'Ні (Нет)'}
-                    ]
-                }, (buttonId) => {
-                    if (buttonId === 'yes') sendData();
-                });
-            } else {
-                // ВСЕ ОК: Просто фінальне підтвердження
-                tg.showPopup({
-                    title: 'Підтвердження',
-                    message: 'Зберегти цей план кошторису?',
-                    buttons: [
-                        {id: 'yes', type: 'default', text: 'Зберегти'},
-                        {type: 'cancel', text: 'Скасувати'}
-                    ]
-                }, (buttonId) => {
-                    if (buttonId === 'yes') sendData();
-                });
+            let msg = "Зберегти цей план кошторису?";
+            if (!p || !d || k == "0" || k == "") {
+                msg = "⚠️ Деякі поля пусті (Мета, Маршрут або КМ). Все одно зберегти?";
             }
+
+            tg.showPopup({
+                title: 'Підтвердження',
+                message: msg,
+                buttons: [
+                    {id: 'yes', type: 'default', text: 'Так (Да)'},
+                    {id: 'no', type: 'destructive', text: 'Ні (Нет)'}
+                ]
+            }, (buttonId) => {
+                if (buttonId === 'yes') {
+                    sendData();
+                }
+            });
         }
 
         function sendData() {
-            const btn = document.getElementById('save_btn');
+            const btn = document.getElementById('main_btn');
             btn.disabled = true;
             btn.innerText = "⏳...";
 
@@ -170,23 +150,4 @@
                 posada: document.getElementById('posada').innerText,
                 viddil: document.getElementById('viddil').innerText,
                 purpose: document.getElementById('purpose').value,
-                destination: document.getElementById('destination').value,
-                date_start: formatDate(document.getElementById('date_start').value),
-                date_end: formatDate(document.getElementById('date_end').value),
-                car: document.getElementById('car').options[document.getElementById('car').selectedIndex].text,
-                km: document.getElementById('km').value,
-                price: document.getElementById('price').value,
-                days_count: res.days,
-                fuel_liters: res.liters,
-                fuel_sum: res.fuelSum,
-                hotel: document.getElementById('hotel').value,
-                per_diem: document.getElementById('per_diem').value,
-                total: res.total
-            };
-            
-            tg.sendData(JSON.stringify(data));
-            setTimeout(() => { tg.close(); }, 500);
-        }
-    </script>
-</body>
-</html>
+                destination: document
