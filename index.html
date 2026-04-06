@@ -150,4 +150,23 @@
                 posada: document.getElementById('posada').innerText,
                 viddil: document.getElementById('viddil').innerText,
                 purpose: document.getElementById('purpose').value,
-                destination: document
+                destination: document.getElementById('destination').value,
+                date_start: formatDate(document.getElementById('date_start').value),
+                date_end: formatDate(document.getElementById('date_end').value),
+                car: document.getElementById('car').options[document.getElementById('car').selectedIndex].text,
+                km: document.getElementById('km').value,
+                price: document.getElementById('price').value,
+                days_count: res.days,
+                fuel_liters: res.liters,
+                fuel_sum: res.fuelSum,
+                hotel: document.getElementById('hotel').value,
+                per_diem: document.getElementById('per_diem').value,
+                total: res.total
+            };
+            
+            tg.sendData(JSON.stringify(data));
+            setTimeout(() => { tg.close(); }, 500);
+        }
+    </script>
+</body>
+</html>
