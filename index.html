@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>План Кошторис v1.2</title> 
+    <title>План Кошторис v1.3</title> 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
@@ -17,6 +17,8 @@
         .total-box { background: #eef7ee; color: #2e7d32; border: 1px solid #2e7d32; padding: 12px; border-radius: 8px; text-align: center; margin-top: 15px; font-weight: bold; font-size: 18px; }
         .btn-save { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; cursor: pointer; }
         .btn-upload { background: #5d8aa8; padding: 10px; font-size: 12px; margin-top: 5px; color: white; border: none; border-radius: 5px; width: 100%; cursor: pointer; }
+        /* Стиль для заблокованої кнопки */
+        .btn-save:disabled { background: #ccc; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -70,7 +72,7 @@
         </div>
 
         <div class="total-box" id="total_display">РАЗОМ: 0 грн</div>
-        <button class="btn-save" id="mainButton" onclick="sendData(event)">💾 Зберегти план</button>
+        <button class="btn-save" id="mainButton" onclick="processSubmission(event)">💾 Зберегти план</button>
     </div>
 
     <script>
@@ -112,27 +114,31 @@
             return { total: Math.round(total) || 0, liters, fuelSum, days };
         }
 
-        function sendData(event) {
-            // 1. Зупиняємо всі фонові процеси негайно
-            if (event) {
-                event.preventDefault();
-                event.stopImmediatePropagation();
-            }
+        // Нова логіка обробки натискання
+        function processSubmission(event) {
+            if (event) event.preventDefault();
 
             const p = document.getElementById('purpose').value.trim();
             const d = document.getElementById('destination').value.trim();
             const k = document.getElementById('km').value;
             const pr = document.getElementById('price').value;
 
-            // 2. Перевірка з блокуванням закриття при натисканні "Скасувати"
+            // Якщо поля порожні, викликаємо НАТИВНЕ вікно Telegram
             if (!p || !d || k == "0" || k == "" || pr == "0" || pr == "") {
-                const isConfirmed = confirm("⚠️ Поля не заповнено! Все вірно? Зберегти план?");
-                if (!isConfirmed) return false; 
+                tg.showConfirm("⚠️ Деякі поля не заповнені (Мета, Маршрут, КМ або Ціна). Все одно зберегти план?", (isConfirmed) => {
+                    if (isConfirmed) {
+                        executeSendData();
+                    }
+                });
+            } else {
+                executeSendData();
             }
+        }
 
-            // Блокуємо кнопку, щоб не натиснули двічі
-            document.getElementById('mainButton').disabled = true;
-            document.getElementById('mainButton').innerText = "⌛ Збереження...";
+        function executeSendData() {
+            const btn = document.getElementById('mainButton');
+            btn.disabled = true;
+            btn.innerText = "⌛ Збереження...";
 
             const res = calculate();
             const formatDate = (v) => v ? v.split('-').reverse().join('.') : "";
@@ -141,13 +147,13 @@
                 pib: document.getElementById('pib').innerText,
                 posada: document.getElementById('posada').innerText,
                 viddil: document.getElementById('viddil').innerText,
-                purpose: p,
-                destination: d,
+                purpose: document.getElementById('purpose').value.trim(),
+                destination: document.getElementById('destination').value.trim(),
                 date_start: formatDate(document.getElementById('date_start').value),
                 date_end: formatDate(document.getElementById('date_end').value),
                 car: document.getElementById('car').options[document.getElementById('car').selectedIndex].text,
-                km: k,
-                price: pr,
+                km: document.getElementById('km').value,
+                price: document.getElementById('price').value,
                 days_count: res.days,
                 fuel_liters: res.liters,
                 fuel_sum: res.fuelSum,
@@ -156,11 +162,9 @@
                 total: res.total
             };
             
-            // 3. Відправляємо дані та закриваємо з невеликою затримкою для стабільності
             tg.sendData(JSON.stringify(data));
-            setTimeout(() => {
-                tg.close();
-            }, 150);
+            // Невелика затримка перед закриттям для надійності відправки
+            setTimeout(() => { tg.close(); }, 200);
         }
     </script>
 </body>
