@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>План Кошторис v1.7</title> 
+    <title>План Кошторис v1.8</title> 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
@@ -17,8 +17,6 @@
         .total-box { background: #eef7ee; color: #2e7d32; border: 1px solid #2e7d32; padding: 12px; border-radius: 8px; text-align: center; margin-top: 15px; font-weight: bold; font-size: 18px; }
         .btn-save { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; cursor: pointer; }
         .btn-upload { background: #5d8aa8; padding: 10px; font-size: 12px; margin-top: 5px; color: white; border: none; border-radius: 5px; width: 100%; cursor: pointer; }
-        
-        /* Червона підсвітка */
         .invalid { border: 2px solid #ff4d4d !important; background: #fff5f5 !important; }
     </style>
 </head>
@@ -31,10 +29,10 @@
         </div>
 
         <label>🎯 МЕТА ВІДРЯДЖЕННЯ:</label>
-        <input type="text" id="purpose" placeholder="Наприклад: Візит до клієнта">
+        <input type="text" id="purpose" placeholder="Введіть мету">
 
         <label>📍 МАРШРУТ:</label>
-        <input type="text" id="destination" placeholder="Київ - Полтава - Київ">
+        <input type="text" id="destination" placeholder="Звідки - Куди">
 
         <div class="row">
             <div><label>📅 ВИЇЗД:</label><input type="date" id="date_start" onchange="calculate()"></div>
@@ -80,109 +78,112 @@
         let tg = window.Telegram.WebApp;
         tg.expand();
 
+        // Ініціалізація даних з URL
         const urlParams = new URLSearchParams(window.location.search);
         document.getElementById('pib').innerText = urlParams.get('pib') || 'Користувач';
         document.getElementById('posada').innerText = urlParams.get('pos') || '---';
         document.getElementById('viddil').innerText = urlParams.get('vid') || '---';
 
         function calculate() {
-            const sVal = document.getElementById('date_start').value;
-            const eVal = document.getElementById('date_end').value;
-            const km = parseFloat(document.getElementById('km').value) || 0;
-            const price = parseFloat(document.getElementById('price').value) || 0;
-            const cons = parseFloat(document.getElementById('car').value) || 6.5;
-            const hotel = parseFloat(document.getElementById('hotel').value) || 0;
-            const perDiem = parseFloat(document.getElementById('per_diem').value) || 0;
+            try {
+                const sVal = document.getElementById('date_start').value;
+                const eVal = document.getElementById('date_end').value;
+                const km = parseFloat(document.getElementById('km').value) || 0;
+                const price = parseFloat(document.getElementById('price').value) || 0;
+                const cons = parseFloat(document.getElementById('car').value) || 6.5;
+                const hotel = parseFloat(document.getElementById('hotel').value) || 0;
+                const perDiem = parseFloat(document.getElementById('per_diem').value) || 0;
 
-            let days = 0;
-            if (sVal && eVal) {
-                const s = new Date(sVal), e = new Date(eVal);
-                if (!isNaN(s) && !isNaN(e) && e >= s) {
-                    days = Math.ceil((e - s) / (1000 * 60 * 60 * 24)) + 1;
+                let days = 0;
+                if (sVal && eVal) {
+                    const s = new Date(sVal), e = new Date(eVal);
+                    if (!isNaN(s) && !isNaN(e) && e >= s) {
+                        days = Math.ceil((e - s) / (1000 * 60 * 60 * 24)) + 1;
+                    }
                 }
+                document.getElementById('days').value = days;
+
+                let liters = (km * cons / 100).toFixed(1);
+                let fuelSum = Math.round(parseFloat(liters) * price);
+                
+                document.getElementById('liters').value = liters;
+                document.getElementById('fuel_sum').value = fuelSum;
+
+                const total = fuelSum + hotel + (perDiem * days);
+                document.getElementById('total_display').innerText = `РАЗОМ: ${Math.round(total) || 0} грн`;
+                
+                return { total: Math.round(total) || 0, liters, fuelSum, days };
+            } catch (e) {
+                console.error("Помилка розрахунку:", e);
+                return { total: 0, liters: 0, fuelSum: 0, days: 0 };
             }
-            document.getElementById('days').value = days;
-
-            let liters = (km * cons / 100).toFixed(1);
-            let fuelSum = Math.round(parseFloat(liters) * price);
-            
-            document.getElementById('liters').value = liters;
-            document.getElementById('fuel_sum').value = fuelSum;
-
-            const total = fuelSum + hotel + (perDiem * days);
-            document.getElementById('total_display').innerText = `РАЗОМ: ${Math.round(total) || 0} грн`;
-            
-            return { total: Math.round(total) || 0, liters, fuelSum, days };
         }
 
         function validateAndSend() {
-            // 1. Отримуємо значення полів
-            const purposeVal = document.getElementById('purpose').value.trim();
-            const destVal = document.getElementById('destination').value.trim();
-            const kmVal = parseFloat(document.getElementById('km').value) || 0;
-            const priceVal = parseFloat(document.getElementById('price').value) || 0;
+            try {
+                // Отримуємо посилання на об'єкти (не значення!)
+                const elP = document.getElementById('purpose');
+                const elD = document.getElementById('destination');
+                const elK = document.getElementById('km');
+                const elPr = document.getElementById('price');
 
-            // 2. Скидаємо стилі
-            document.getElementById('purpose').classList.remove('invalid');
-            document.getElementById('destination').classList.remove('invalid');
-            document.getElementById('km').classList.remove('invalid');
-            document.getElementById('price').classList.remove('invalid');
+                // Отримуємо значення
+                const valP = elP.value.trim();
+                const valD = elD.value.trim();
+                const valK = parseFloat(elK.value) || 0;
+                const valPr = parseFloat(elPr.value) || 0;
 
-            let errors = [];
+                // Скидаємо помилки
+                [elP, elD, elK, elPr].forEach(el => el.classList.remove('invalid'));
 
-            // 3. Перевірка логіки
-            if (purposeVal === "") { 
-                document.getElementById('purpose').classList.add('invalid'); 
-                errors.push("Мету"); 
+                let errorFields = [];
+
+                // Перевірка кожного поля окремо
+                if (valP === "") { elP.classList.add('invalid'); errorFields.push("Мета"); }
+                if (valD === "") { elD.classList.add('invalid'); errorFields.push("Маршрут"); }
+                if (valK <= 0) { elK.classList.add('invalid'); errorFields.push("Кілометраж"); }
+                if (valPr <= 0) { elPr.classList.add('invalid'); errorFields.push("Ціна пального"); }
+
+                // Якщо є помилки - виходимо
+                if (errorFields.length > 0) {
+                    tg.showAlert("⚠️ Будь ласка, заповніть: " + errorFields.join(", "));
+                    return; // СТОП! Далі код не піде
+                }
+
+                // Якщо все добре - блокуємо кнопку і шлемо дані
+                const btn = document.getElementById('main_btn');
+                btn.disabled = true;
+                btn.innerText = "Збереження...";
+
+                const res = calculate();
+                const formatDate = (v) => v ? v.split('-').reverse().join('.') : "";
+
+                const finalData = {
+                    pib: document.getElementById('pib').innerText,
+                    posada: document.getElementById('posada').innerText,
+                    viddil: document.getElementById('viddil').innerText,
+                    purpose: valP,
+                    destination: valD,
+                    date_start: formatDate(document.getElementById('date_start').value),
+                    date_end: formatDate(document.getElementById('date_end').value),
+                    car: document.getElementById('car').options[document.getElementById('car').selectedIndex].text,
+                    km: valK.toString(),
+                    price: valPr.toString(),
+                    days_count: res.days,
+                    fuel_liters: res.liters,
+                    fuel_sum: res.fuelSum,
+                    hotel: document.getElementById('hotel').value,
+                    per_diem: document.getElementById('per_diem').value,
+                    total: res.total
+                };
+
+                tg.sendData(JSON.stringify(finalData));
+                setTimeout(() => { tg.close(); }, 500);
+
+            } catch (err) {
+                // Якщо десь в коді виникла помилка, показуємо її
+                alert("Помилка скрипта: " + err.message);
             }
-            if (destVal === "") { 
-                document.getElementById('destination').classList.add('invalid'); 
-                errors.push("Маршрут"); 
-            }
-            if (kmVal <= 0) { 
-                document.getElementById('km').classList.add('invalid'); 
-                errors.push("Кілометраж"); 
-            }
-            if (priceVal <= 0) { 
-                document.getElementById('price').classList.add('invalid'); 
-                errors.push("Ціну пального"); 
-            }
-
-            // 4. ЯКЩО Є ПОМИЛКИ - ЗУПИНЯЄМО ВСЕ
-            if (errors.length > 0) {
-                tg.showAlert("⚠️ Не заповнено: " + errors.join(", "));
-                return; // Цей рядок ГАРАНТОВАНО зупиняє відправку
-            }
-
-            // 5. ВІДПРАВКА ДАНИХ (тільки якщо errors порожній)
-            const btn = document.getElementById('main_btn');
-            btn.disabled = true;
-            btn.innerText = "Відправка...";
-
-            const res = calculate();
-            const formatDate = (v) => v ? v.split('-').reverse().join('.') : "";
-
-            const finalData = {
-                pib: document.getElementById('pib').innerText,
-                posada: document.getElementById('posada').innerText,
-                viddil: document.getElementById('viddil').innerText,
-                purpose: purposeVal,
-                destination: destVal,
-                date_start: formatDate(document.getElementById('date_start').value),
-                date_end: formatDate(document.getElementById('date_end').value),
-                car: document.getElementById('car').options[document.getElementById('car').selectedIndex].text,
-                km: kmVal.toString(),
-                price: priceVal.toString(),
-                days_count: res.days,
-                fuel_liters: res.liters,
-                fuel_sum: res.fuelSum,
-                hotel: document.getElementById('hotel').value,
-                per_diem: document.getElementById('per_diem').value,
-                total: res.total
-            };
-
-            tg.sendData(JSON.stringify(finalData));
-            setTimeout(() => { tg.close(); }, 500);
         }
     </script>
 </body>
