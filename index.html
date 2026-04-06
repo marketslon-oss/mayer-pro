@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>План Кошторис v1.1</title> 
+    <title>План Кошторис v1.2</title> 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
@@ -70,7 +70,7 @@
         </div>
 
         <div class="total-box" id="total_display">РАЗОМ: 0 грн</div>
-        <button class="btn-save" onclick="sendData(event)">💾 Зберегти план</button>
+        <button class="btn-save" id="mainButton" onclick="sendData(event)">💾 Зберегти план</button>
     </div>
 
     <script>
@@ -113,6 +113,7 @@
         }
 
         function sendData(event) {
+            // 1. Зупиняємо всі фонові процеси негайно
             if (event) {
                 event.preventDefault();
                 event.stopImmediatePropagation();
@@ -123,12 +124,15 @@
             const k = document.getElementById('km').value;
             const pr = document.getElementById('price').value;
 
-            // Перевірка ПЕРЕД відправкою
-            if (!p || !d || k == "0" || k == "" || pr == "0") {
-                if (!confirm("⚠️ Поля не заповнено! Все вірно? Зберегти план?")) {
-                    return false; 
-                }
+            // 2. Перевірка з блокуванням закриття при натисканні "Скасувати"
+            if (!p || !d || k == "0" || k == "" || pr == "0" || pr == "") {
+                const isConfirmed = confirm("⚠️ Поля не заповнено! Все вірно? Зберегти план?");
+                if (!isConfirmed) return false; 
             }
+
+            // Блокуємо кнопку, щоб не натиснули двічі
+            document.getElementById('mainButton').disabled = true;
+            document.getElementById('mainButton').innerText = "⌛ Збереження...";
 
             const res = calculate();
             const formatDate = (v) => v ? v.split('-').reverse().join('.') : "";
@@ -152,8 +156,11 @@
                 total: res.total
             };
             
+            // 3. Відправляємо дані та закриваємо з невеликою затримкою для стабільності
             tg.sendData(JSON.stringify(data));
-            tg.close();
+            setTimeout(() => {
+                tg.close();
+            }, 150);
         }
     </script>
 </body>
