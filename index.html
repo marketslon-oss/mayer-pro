@@ -2,8 +2,9 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>План Кошторис v1.9</title> 
+    <title>План Кошторис v2.0</title> 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
@@ -16,43 +17,33 @@
         .gray-field { background: #f9f9f9; color: #444; font-weight: bold; border: 1px dashed #bbb; }
         .total-box { background: #eef7ee; color: #2e7d32; border: 1px solid #2e7d32; padding: 12px; border-radius: 8px; text-align: center; margin-top: 15px; font-weight: bold; font-size: 18px; }
         .btn-save { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; cursor: pointer; }
-        .btn-upload { background: #5d8aa8; padding: 10px; font-size: 12px; margin-top: 5px; color: white; border: none; border-radius: 5px; width: 100%; cursor: pointer; }
         
-        /* Блок помилки зверху кнопки */
-        #error_summary { 
-            display: none; 
-            background: #fff5f5; 
-            color: #d32f2f; 
-            border: 1px solid #d32f2f; 
-            padding: 10px; 
-            border-radius: 8px; 
-            margin-top: 15px; 
-            font-size: 12px; 
-            font-weight: bold;
-        }
-        .invalid { border: 2px solid #ff4d4d !important; background: #fff5f5 !important; }
+        /* Валідація без вікон */
+        .error-hint { color: #d32f2f; font-size: 10px; font-weight: bold; margin-top: 4px; display: none; }
+        .invalid { border: 2px solid #ff4d4d !important; }
     </style>
 </head>
 <body>
     <div class="card">
         <div class="user-header">
-            <b>ПІБ:</b> <span id="pib">Завантаження...</span><br>
-            <b>Посада:</b> <span id="posada">...</span><br>
-            <b>Відділ:</b> <span id="viddil">...</span>
+            <b>ПІБ:</b> <span id="pib">...</span> (<b>ПІБ:</b> <span id="pib_ru">...</span>)<br>
+            <b>Посада:</b> <span id="posada">...</span> (<b>Должность:</b> <span id="posada_ru">...</span>)
         </div>
 
-        <label>🎯 МЕТА ВІДРЯДЖЕННЯ:</label>
-        <input type="text" id="purpose" placeholder="Введіть мету">
+        <label>🎯 МЕТА (ЦЕЛЬ):</label>
+        <input type="text" id="purpose">
+        <div id="err_p" class="error-hint">Заповніть мету! (Заполните цель!)</div>
 
         <label>📍 МАРШРУТ:</label>
-        <input type="text" id="destination" placeholder="Звідки - Куди">
+        <input type="text" id="destination">
+        <div id="err_d" class="error-hint">Вкажіть маршрут! (Укажите маршрут!)</div>
 
         <div class="row">
-            <div><label>📅 ВИЇЗД:</label><input type="date" id="date_start" onchange="calculate()"></div>
-            <div><label>📅 ПРИБУТТЯ:</label><input type="date" id="date_end" onchange="calculate()"></div>
+            <div><label>📅 ВИЇЗД (ВЫЕЗД):</label><input type="date" id="date_start" onchange="calculate()"></div>
+            <div><label>📅 ПРИБУТТЯ (ПРИБЫТИЕ):</label><input type="date" id="date_end" onchange="calculate()"></div>
         </div>
 
-        <label>🚗 АВТОМОБІЛЬ:</label>
+        <label>🚗 АВТОМОБІЛЬ (АВТОМОБИЛЬ):</label>
         <select id="car" onchange="calculate()">
             <option value="6.5">Opel Combo (KA1197MO)</option>
             <option value="8.4">Toyota Corolla (KA4730AP)</option>
@@ -60,34 +51,18 @@
         </select>
 
         <div class="row">
-            <div><label>🗺️ ПЛАНОВИЙ КМ:</label><input type="number" id="km" value="0" oninput="calculate()"></div>
-            <div><label>💰 ЦІНА ПАЛЬНОГО:</label><input type="number" id="price" value="0" oninput="calculate()"></div>
+            <div><label>🗺️ КМ:</label><input type="number" id="km" value="0" oninput="calculate()"></div>
+            <div><label>💰 ЦІНА ПАЛЬНОГО (ЦЕНА):</label><input type="number" id="price" value="0" oninput="calculate()"></div>
         </div>
 
         <div class="row">
-            <div><label>🔢 К-СТЬ ДІБ:</label><input type="number" id="days" class="gray-field" readonly value="0"></div>
-            <div><label>⛽ ЛІТРИ (АВТО):</label><input type="text" id="liters" class="gray-field" readonly value="0"></div>
+            <div><label>🏨 ГОТЕЛЬ (ОТЕЛЬ):</label><input type="number" id="hotel" value="0" oninput="calculate()"></div>
+            <div><label>🍔 ДОБОВІ (СУТОЧНЫЕ):</label><input type="number" id="per_diem" value="0" oninput="calculate()"></div>
         </div>
 
-        <div class="row">
-            <div><label>💵 СУМА ПММ:</label><input type="text" id="fuel_sum" class="gray-field" readonly value="0"></div>
-            <div><label>🏨 ГОТЕЛЬ:</label><input type="number" id="hotel" value="0" oninput="calculate()"></div>
-        </div>
-
-        <label>🍔 ДОБОВІ (ЗА 1 ДОБУ):</label>
-        <input type="number" id="per_diem" value="0" oninput="calculate()">
-
-        <label>📎 ДОДАТИ ДОКУМЕНТИ:</label>
-        <div class="row">
-            <div><button type="button" class="btn-upload" onclick="document.getElementById('f1').click()">📁 ФАЙЛ</button><input type="file" id="f1" style="display:none"></div>
-            <div><button type="button" class="btn-upload" onclick="document.getElementById('f2').click()">📷 ФОТО</button><input type="file" id="f2" accept="image/*" capture="camera" style="display:none"></div>
-        </div>
-
-        <div class="total-box" id="total_display">РАЗОМ: 0 грн</div>
+        <div class="total-box" id="total_display">РАЗОМ (ИТОГО): 0 грн</div>
         
-        <div id="error_summary"></div>
-        
-        <button class="btn-save" id="main_btn" onclick="validateAndSend()">💾 Зберегти план</button>
+        <button class="btn-save" id="save_btn" onclick="fastSend()">💾 Зберегти (Сохранить)</button>
     </div>
 
     <script>
@@ -95,9 +70,10 @@
         tg.expand();
 
         const urlParams = new URLSearchParams(window.location.search);
-        document.getElementById('pib').innerText = urlParams.get('pib') || 'Користувач';
+        const name = urlParams.get('pib') || 'Користувач';
+        document.getElementById('pib').innerText = name;
+        document.getElementById('pib_ru').innerText = name;
         document.getElementById('posada').innerText = urlParams.get('pos') || '---';
-        document.getElementById('viddil').innerText = urlParams.get('vid') || '---';
 
         function calculate() {
             const sVal = document.getElementById('date_start').value;
@@ -111,73 +87,53 @@
             let days = 0;
             if (sVal && eVal) {
                 const s = new Date(sVal), e = new Date(eVal);
-                if (!isNaN(s) && !isNaN(e) && e >= s) {
-                    days = Math.ceil((e - s) / (1000 * 60 * 60 * 24)) + 1;
-                }
+                if (e >= s) days = Math.ceil((e - s) / (1000 * 60 * 60 * 24)) + 1;
             }
-            document.getElementById('days').value = days;
-            let liters = (km * cons / 100).toFixed(1);
-            let fuelSum = Math.round(parseFloat(liters) * price);
-            document.getElementById('liters').value = liters;
-            document.getElementById('fuel_sum').value = fuelSum;
+
+            let fuelSum = Math.round((km * cons / 100) * price);
             const total = fuelSum + hotel + (perDiem * days);
             document.getElementById('total_display').innerText = `РАЗОМ: ${Math.round(total) || 0} грн`;
-            return { total: Math.round(total) || 0, liters, fuelSum, days };
+            return { total, fuelSum, days };
         }
 
-        function validateAndSend() {
-            const errBox = document.getElementById('error_summary');
-            errBox.style.display = 'none';
-            errBox.innerText = '';
-
+        function fastSend() {
             const p = document.getElementById('purpose');
             const d = document.getElementById('destination');
             const k = document.getElementById('km');
-            const pr = document.getElementById('price');
+            
+            // Скидаємо помилки
+            p.classList.remove('invalid'); d.classList.remove('invalid'); k.classList.remove('invalid');
+            document.getElementById('err_p').style.display = 'none';
+            document.getElementById('err_d').style.display = 'none';
 
-            [p, d, k, pr].forEach(el => el.classList.remove('invalid'));
+            // Тільки критична перевірка
+            let hasError = false;
+            if (!p.value.trim()) { p.classList.add('invalid'); document.getElementById('err_p').style.display = 'block'; hasError = true; }
+            if (!d.value.trim()) { d.classList.add('invalid'); document.getElementById('err_d').style.display = 'block'; hasError = true; }
+            if (parseFloat(k.value) <= 0) { k.classList.add('invalid'); hasError = true; }
 
-            let errors = [];
-            if (!p.value.trim()) { p.classList.add('invalid'); errors.push("Мету"); }
-            if (!d.value.trim()) { d.classList.add('invalid'); errors.push("Маршрут"); }
-            if (parseFloat(k.value) <= 0) { k.classList.add('invalid'); errors.push("Кілометраж"); }
-            if (parseFloat(pr.value) <= 0) { pr.classList.add('invalid'); errors.push("Ціну пального"); }
-
-            if (errors.length > 0) {
-                errBox.innerText = "⚠️ Заповніть: " + errors.join(", ");
-                errBox.style.display = 'block';
+            if (hasError) {
                 tg.HapticFeedback.notificationOccurred('error');
-                return; // СТОП - відправка не відбудеться
+                return;
             }
 
-            // Тільки якщо помилок немає:
-            document.getElementById('main_btn').disabled = true;
-            document.getElementById('main_btn').innerText = "Збереження...";
+            const btn = document.getElementById('save_btn');
+            btn.disabled = true;
+            btn.innerText = "⏳...";
 
             const res = calculate();
-            const formatDate = (v) => v ? v.split('-').reverse().join('.') : "";
-
             const data = {
-                pib: document.getElementById('pib').innerText,
-                posada: document.getElementById('posada').innerText,
-                viddil: document.getElementById('viddil').innerText,
+                pib: name,
                 purpose: p.value.trim(),
                 destination: d.value.trim(),
-                date_start: formatDate(document.getElementById('date_start').value),
-                date_end: formatDate(document.getElementById('date_end').value),
-                car: document.getElementById('car').options[document.getElementById('car').selectedIndex].text,
+                total: res.total,
                 km: k.value,
-                price: pr.value,
-                days_count: res.days,
-                fuel_liters: res.liters,
-                fuel_sum: res.fuelSum,
-                hotel: document.getElementById('hotel').value,
-                per_diem: document.getElementById('per_diem').value,
-                total: res.total
+                fuel_sum: res.fuelSum
             };
 
             tg.sendData(JSON.stringify(data));
-            setTimeout(() => { tg.close(); }, 500);
+            // Закриваємо миттєво, щоб не було відчуття зависання
+            tg.close();
         }
     </script>
 </body>
