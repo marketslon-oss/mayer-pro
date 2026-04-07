@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>План Кошторис v2.6</title> 
+    <title>План Кошторис v2.7</title> 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
@@ -17,6 +17,7 @@
         .total-box { background: #eef7ee; color: #2e7d32; border: 1px solid #2e7d32; padding: 12px; border-radius: 8px; text-align: center; margin-top: 15px; font-weight: bold; font-size: 18px; }
         .btn-save { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; cursor: pointer; }
         .btn-upload { background: #5d8aa8; padding: 10px; font-size: 12px; margin-top: 5px; color: white; border: none; border-radius: 5px; width: 100%; cursor: pointer; }
+        .btn-save:disabled { background: #ccc; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -77,6 +78,7 @@
         let tg = window.Telegram.WebApp;
         tg.expand();
 
+        // Отримання даних з URL
         const urlParams = new URLSearchParams(window.location.search);
         document.getElementById('pib').innerText = urlParams.get('pib') || 'Користувач';
         document.getElementById('posada').innerText = urlParams.get('pos') || '---';
@@ -112,55 +114,50 @@
             return { total: Math.round(total) || 0, liters, fuelSum, days };
         }
 
-        // КНОПКА ТАК/НІ (Popup Telegram)
         function askBeforeSend() {
             const p = document.getElementById('purpose').value.trim();
             const d = document.getElementById('destination').value.trim();
             const k = document.getElementById('km').value;
 
-            let msg = "Зберегти цей план кошторису?";
-            if (!p || !d || k == "0" || k == "") {
-                msg = "⚠️ Деякі поля пусті (Мета, Маршрут або КМ). Все одно зберегти?";
-            }
+            // Перевірка на пусті важливі поля
+            let needsWarning = (!p || !d || k == "0" || k == "" || k == "NaN");
+            
+            let msg = needsWarning 
+                ? "⚠️ Увага! Деякі поля пусті (Мета, Маршрут або КМ).\n\nВсе одно зберегти план?" 
+                : "Зберегти цей план кошторису і надіслати боту?";
 
-            tg.showPopup({
-                title: 'Підтвердження',
-                message: msg,
-                buttons: [
-                    {id: 'yes', type: 'default', text: 'Так (Да)'},
-                    {id: 'no', type: 'destructive', text: 'Ні (Нет)'}
-                ]
-            }, (buttonId) => {
-                if (buttonId === 'yes') {
-                    sendData();
-                }
-            });
+            if (confirm(msg)) {
+                sendData();
+            }
         }
 
         function sendData() {
             const btn = document.getElementById('main_btn');
             btn.disabled = true;
-            btn.innerText = "⏳...";
+            btn.innerText = "⏳ Відправка...";
 
             const res = calculate();
-            const formatDate = (v) => v ? v.split('-').reverse().join('.') : "";
+            const formatDate = (v) => {
+                if (!v) return "---";
+                return v.split('-').reverse().join('.');
+            };
 
             const data = {
                 pib: document.getElementById('pib').innerText,
                 posada: document.getElementById('posada').innerText,
                 viddil: document.getElementById('viddil').innerText,
-                purpose: document.getElementById('purpose').value,
-                destination: document.getElementById('destination').value,
+                purpose: document.getElementById('purpose').value || "---",
+                destination: document.getElementById('destination').value || "---",
                 date_start: formatDate(document.getElementById('date_start').value),
                 date_end: formatDate(document.getElementById('date_end').value),
                 car: document.getElementById('car').options[document.getElementById('car').selectedIndex].text,
-                km: document.getElementById('km').value,
-                price: document.getElementById('price').value,
+                km: document.getElementById('km').value || "0",
+                price: document.getElementById('price').value || "0",
                 days_count: res.days,
                 fuel_liters: res.liters,
                 fuel_sum: res.fuelSum,
-                hotel: document.getElementById('hotel').value,
-                per_diem: document.getElementById('per_diem').value,
+                hotel: document.getElementById('hotel').value || "0",
+                per_diem: document.getElementById('per_diem').value || "0",
                 total: res.total
             };
             
