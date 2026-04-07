@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>План Кошторис v2.8</title> 
+    <title>План Кошторис v2.9</title> 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
@@ -78,6 +78,7 @@
         let tg = window.Telegram.WebApp;
         tg.expand();
 
+        // Отримання даних з URL
         const urlParams = new URLSearchParams(window.location.search);
         document.getElementById('pib').innerText = urlParams.get('pib') || 'Користувач';
         document.getElementById('posada').innerText = urlParams.get('pos') || '---';
@@ -113,23 +114,29 @@
             return { total: Math.round(total) || 0, liters, fuelSum, days };
         }
 
-        // КРИТИЧНЕ ВИПРАВЛЕННЯ: Використовуємо нативний метод Telegram
+        // ПОВНА ВАЛІДАЦІЯ ВСІХ ПОЛІВ
         function askBeforeSend() {
             const p = document.getElementById('purpose').value.trim();
             const d = document.getElementById('destination').value.trim();
             const k = document.getElementById('km').value;
+            const pr = document.getElementById('price').value;
+            const h = document.getElementById('hotel').value;
+            const pd = document.getElementById('per_diem').value;
 
             let emptyFields = [];
-            if (!p) emptyFields.push("Мета");
+            if (!p) emptyFields.push("Мета відрядження");
             if (!d) emptyFields.push("Маршрут");
-            if (!k || k == "0") emptyFields.push("Кілометраж");
+            if (!k || k == "0" || k == "") emptyFields.push("Плановий кілометраж");
+            if (!pr || pr == "0" || pr == "") emptyFields.push("Ціна пального");
+            if (!h || h == "0" || h == "") emptyFields.push("Готель");
+            if (!pd || pd == "0" || pd == "") emptyFields.push("Добові");
 
             let message = "Зберегти цей план кошторису?";
             if (emptyFields.length > 0) {
-                message = "⚠️ Увага! Не заповнено: " + emptyFields.join(", ") + ".\n\nВсе одно зберегти план?";
+                message = "⚠️ Увага! Не заповнено (або 0):\n• " + emptyFields.join("\n• ") + "\n\nВсе одно зберегти план?";
             }
 
-            // Нативне вікно підтвердження Telegram
+            // Нативний метод Telegram для 100% стабільності
             tg.showConfirm(message, function(ok) {
                 if (ok) {
                     sendData();
@@ -165,7 +172,6 @@
             };
             
             tg.sendData(JSON.stringify(data));
-            // Не закриваємо миттєво, даємо час на відправку
             setTimeout(() => { tg.close(); }, 700);
         }
     </script>
