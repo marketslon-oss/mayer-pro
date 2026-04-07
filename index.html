@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>План Кошторис v2.7</title> 
+    <title>План Кошторис v2.8</title> 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
@@ -78,7 +78,6 @@
         let tg = window.Telegram.WebApp;
         tg.expand();
 
-        // Отримання даних з URL
         const urlParams = new URLSearchParams(window.location.search);
         document.getElementById('pib').innerText = urlParams.get('pib') || 'Користувач';
         document.getElementById('posada').innerText = urlParams.get('pos') || '---';
@@ -114,21 +113,28 @@
             return { total: Math.round(total) || 0, liters, fuelSum, days };
         }
 
+        // КРИТИЧНЕ ВИПРАВЛЕННЯ: Використовуємо нативний метод Telegram
         function askBeforeSend() {
             const p = document.getElementById('purpose').value.trim();
             const d = document.getElementById('destination').value.trim();
             const k = document.getElementById('km').value;
 
-            // Перевірка на пусті важливі поля
-            let needsWarning = (!p || !d || k == "0" || k == "" || k == "NaN");
-            
-            let msg = needsWarning 
-                ? "⚠️ Увага! Деякі поля пусті (Мета, Маршрут або КМ).\n\nВсе одно зберегти план?" 
-                : "Зберегти цей план кошторису і надіслати боту?";
+            let emptyFields = [];
+            if (!p) emptyFields.push("Мета");
+            if (!d) emptyFields.push("Маршрут");
+            if (!k || k == "0") emptyFields.push("Кілометраж");
 
-            if (confirm(msg)) {
-                sendData();
+            let message = "Зберегти цей план кошторису?";
+            if (emptyFields.length > 0) {
+                message = "⚠️ Увага! Не заповнено: " + emptyFields.join(", ") + ".\n\nВсе одно зберегти план?";
             }
+
+            // Нативне вікно підтвердження Telegram
+            tg.showConfirm(message, function(ok) {
+                if (ok) {
+                    sendData();
+                }
+            });
         }
 
         function sendData() {
@@ -137,10 +143,7 @@
             btn.innerText = "⏳ Відправка...";
 
             const res = calculate();
-            const formatDate = (v) => {
-                if (!v) return "---";
-                return v.split('-').reverse().join('.');
-            };
+            const formatDate = (v) => v ? v.split('-').reverse().join('.') : "---";
 
             const data = {
                 pib: document.getElementById('pib').innerText,
@@ -162,7 +165,8 @@
             };
             
             tg.sendData(JSON.stringify(data));
-            setTimeout(() => { tg.close(); }, 500);
+            // Не закриваємо миттєво, даємо час на відправку
+            setTimeout(() => { tg.close(); }, 700);
         }
     </script>
 </body>
