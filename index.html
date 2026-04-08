@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>План Кошторис v3.0</title> 
+    <title>План Кошторис v3.2</title> 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
@@ -114,27 +114,32 @@
         }
 
         function askBeforeSend() {
-            const p = document.getElementById('purpose').value.trim();
-            const d = document.getElementById('destination').value.trim();
-            const k = document.getElementById('km').value;
-            const pr = document.getElementById('price').value;
-            const h = document.getElementById('hotel').value;
-            const pd = document.getElementById('per_diem').value;
+            // Отримуємо значення
+            const purpose = document.getElementById('purpose').value.trim();
+            const destination = document.getElementById('destination').value.trim();
+            const km = document.getElementById('km').value;
+            const price = document.getElementById('price').value;
+            const hotel = document.getElementById('hotel').value;
+            const perDiem = document.getElementById('per_diem').value;
 
-            let empty = [];
-            if (!p) empty.push("Мета");
-            if (!d) empty.push("Маршрут");
-            if (!k || k == "0") empty.push("КМ");
-            if (!pr || pr == "0") empty.push("Ціна");
-            if (!h || h == "0") empty.push("Готель");
-            if (!pd || pd == "0") empty.push("Добові");
+            let missing = [];
 
-            let message = "Зберегти цей план кошторису?";
-            if (empty.length > 0) {
-                // Робимо список в один рядок через кому, щоб він вліз у вікно Telegram
-                message = "⚠️ Не заповнено: " + empty.join(", ") + ".\n\nВсе одно зберегти?";
+            // Строга перевірка кожного поля
+            if (!purpose) missing.push("Мета");
+            if (!destination) missing.push("Маршрут");
+            if (!km || parseFloat(km) <= 0) missing.push("КМ");
+            if (!price || parseFloat(price) <= 0) missing.push("Ціна");
+            if (!hotel || parseFloat(hotel) <= 0) missing.push("Готель");
+            if (!perDiem || parseFloat(perDiem) <= 0) missing.push("Добові");
+
+            let message = "Зберегти звіт?";
+            
+            if (missing.length > 0) {
+                // Виводимо список усіх пропущених полів
+                message = "⚠️ Увага! Не заповнено: " + missing.join(", ") + ". Все одно відправити?";
             }
 
+            // Нативне підтвердження Telegram
             tg.showConfirm(message, function(ok) {
                 if (ok) {
                     sendData();
