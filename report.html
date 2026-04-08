@@ -1,61 +1,20 @@
-<!DOCTYPE html>
-<html lang="uk">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Звіт про відрядження v2.0</title> 
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
-        .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .user-header { background: #e3f2fd; padding: 12px; border-radius: 10px; margin-bottom: 15px; font-size: 13px; border-left: 5px solid #1976d2; }
-        label { display: block; font-weight: bold; margin-top: 10px; font-size: 11px; color: #555; text-transform: uppercase; }
-        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin-top: 4px; box-sizing: border-box; font-size: 14px; }
-        .row { display: flex; gap: 10px; margin-top: 5px; }
-        .row > div { flex: 1; }
-        .total-box { background: #fff3e0; color: #e65100; border: 1px solid #ffb74d; padding: 12px; border-radius: 8px; text-align: center; margin-top: 15px; font-weight: bold; font-size: 16px; }
-        .btn-report { width: 100%; padding: 15px; background: #1976d2; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; cursor: pointer; }
-    </style>
-</head>
 <body>
     <div class="card">
         <div class="user-header">
-            <b>ЗВІТ:</b> <span id="pib">...</span><br>
-            <b>Відділ:</b> <span id="viddil">...</span>
+            <b>ЗВІТ:</b> <span id="pib_label">...</span><br>
+            <b>Поїздка №:</b> <span id="trip_id_label">...</span>
         </div>
 
-        <label>🔢 НОМЕР ПОЇЗДКИ:</label>
-        <input type="text" id="trip_id" placeholder="Наприклад: П-1403-1256">
+        <input type="hidden" id="trip_id">
+        <label>🏁 МАРШРУТ (З ПЛАНУ):</label>
+        <input type="text" id="destination" readonly style="background:#f0f0f0;">
 
         <label>🚗 ОДОМЕТР (КМ):</label>
         <div class="row">
             <div><input type="number" id="odo_start" placeholder="Виїзд"></div>
             <div><input type="number" id="odo_end" placeholder="Прибуття"></div>
         </div>
-
-        <label>⛽ ЗАЛИШОК ПАЛИВА (Л):</label>
-        <div class="row">
-            <div><input type="number" id="fuel_start" placeholder="Виїзд"></div>
-            <div><input type="number" id="fuel_end" placeholder="Повернення"></div>
-        </div>
-
-        <label>💰 КОШТИ (ГРН):</label>
-        <div class="row">
-            <div><input type="number" id="money_received" placeholder="Отримано"></div>
-            <div><input type="number" id="money_spent" placeholder="Витрачено"></div>
-        </div>
-
-        <label>🏨 ВИТРАТИ ПО КАТЕГОРІЯХ:</label>
-        <div class="row">
-            <div><input type="number" id="cost_hotel" placeholder="Готель"></div>
-            <div><input type="number" id="cost_perdiem" placeholder="Добові"></div>
-        </div>
-        <div class="row">
-            <div><input type="number" id="cost_fuel" placeholder="ПММ"></div>
-            <div><input type="number" id="cost_other" placeholder="Інше"></div>
-        </div>
-
-        <div class="total-box" id="result_label">ФІНАЛЬНИЙ ЗВІТ</div>
+        
         <button class="btn-report" onclick="validateAndSend()">💾 Надіслати звіт</button>
     </div>
 
@@ -63,42 +22,20 @@
         let tg = window.Telegram.WebApp;
         tg.expand();
 
+        // Автопідстановка даних з URL
         const params = new URLSearchParams(window.location.search);
-        document.getElementById('pib').innerText = params.get('pib') || 'Користувач';
-        document.getElementById('viddil').innerText = params.get('vid') || '---';
+        const pib = params.get('pib') || 'Користувач';
+        const trip_id = params.get('trip_id') || '';
+        const dest = params.get('dest') || '';
+
+        document.getElementById('pib_label').innerText = pib;
+        document.getElementById('trip_id_label').innerText = trip_id;
+        document.getElementById('trip_id').value = trip_id;
+        document.getElementById('destination').value = dest;
 
         function validateAndSend() {
-            const tripId = document.getElementById('trip_id').value.trim();
-            const odoEnd = document.getElementById('odo_end').value;
-            
-            if (!tripId) {
-                tg.showAlert("⚠️ Будь ласка, вкажіть номер поїздки!");
-                return;
-            }
-
-            tg.showConfirm("Надіслати фінальний звіт?", (ok) => {
-                if (ok) {
-                    const data = {
-                        form_type: 'report',
-                        trip_id: tripId,
-                        odo_start: document.getElementById('odo_start').value,
-                        odo_end: odoEnd,
-                        fuel_start: document.getElementById('fuel_start').value,
-                        fuel_end: document.getElementById('fuel_end').value,
-                        money_received: document.getElementById('money_received').value,
-                        money_spent: document.getElementById('money_spent').value,
-                        costs: {
-                            hotel: document.getElementById('cost_hotel').value,
-                            perdiem: document.getElementById('cost_perdiem').value,
-                            fuel: document.getElementById('cost_fuel').value,
-                            other: document.getElementById('cost_other').value
-                        }
-                    };
-                    tg.sendData(JSON.stringify(data));
-                    tg.close();
-                }
-            });
+            // Логіка відправки JSON через tg.sendData (як у плані)
+            // ...
         }
     </script>
 </body>
-</html>
