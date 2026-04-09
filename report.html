@@ -3,19 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Звіт про відрядження</title>
+    <title>Звіт про відрядження v4.0</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
         .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .user-header { background: #eef2f7; padding: 12px; border-radius: 10px; margin-bottom: 15px; font-size: 13px; border-left: 5px solid #007aff; }
+        
+        .user-header { background: #f1f1f1; padding: 12px; border-radius: 10px; margin-bottom: 15px; font-size: 13px; border-left: 5px solid #71a95e; }
+        .date-section { background: #fff9e6; padding: 10px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ffeeba; }
+        
         label { display: block; font-weight: bold; margin-top: 10px; font-size: 11px; color: #555; text-transform: uppercase; }
-        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin-top: 4px; box-sizing: border-box; font-size: 14px; }
+        input, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin-top: 4px; box-sizing: border-box; font-size: 14px; }
+        
         .row { display: flex; gap: 10px; align-items: flex-start; }
         .row > div { flex: 1; }
-        .gray-field { background: #f9f9f9; color: #444; border: 1px dashed #bbb; }
+        
+        .car-box { text-align: center; background: #f9f9f9; padding: 10px; border-radius: 10px; border: 1px solid #eee; margin: 15px 0; }
+        .car-box label { text-align: center; }
+
+        .gray-field { background: #f9f9f9; color: #444; border: 1px dashed #bbb; font-weight: bold; }
+        
+        .finance-section { background: #f0f7ff; padding: 12px; border-radius: 10px; border: 1px solid #cce5ff; margin-top: 15px; }
         .total-box { background: #eef7ee; color: #2e7d32; border: 1px solid #2e7d32; padding: 12px; border-radius: 8px; text-align: center; margin-top: 15px; font-weight: bold; font-size: 18px; }
-        .btn-save { width: 100%; padding: 15px; background: #007aff; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; cursor: pointer; }
+        .balance-box { font-size: 14px; margin-top: 8px; text-align: center; font-weight: bold; }
+
+        .btn-save { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -23,8 +35,15 @@
         <div class="user-header">
             <b>ПІБ:</b> <span id="pib">...</span><br>
             <b>Посада:</b> <span id="pos">...</span><br>
-            <b>Відділ:</b> <span id="vid">...</span><br>
-            <b>💵 ОТРИМАНО ПІД ЗВІТ:</b> <span id="received">0</span> грн
+            <b>Відділ:</b> <span id="vid">...</span>
+        </div>
+
+        <div class="date-section">
+            <div class="row">
+                <div><label>📅 ВИЇЗД:</label><input type="text" id="date_start" class="gray-field" readonly></div>
+                <div><label>📅 ПРИБУТТЯ:</label><input type="text" id="date_end" class="gray-field" readonly></div>
+            </div>
+            <div style="text-align: center;"><label>🔢 КІЛЬКІСТЬ ДІБ:</label><input type="text" id="days" class="gray-field" readonly style="text-align: center; width: 60px; margin: 0 auto; display: block;"></div>
         </div>
 
         <label>🎯 МЕТА ВІДРЯДЖЕННЯ:</label>
@@ -33,35 +52,41 @@
         <label>📍 МАРШРУТ:</label>
         <input type="text" id="destination" class="gray-field" readonly>
 
-        <div class="row">
-            <div><label>📅 ВИЇЗД:</label><input type="text" id="date_start" class="gray-field" readonly></div>
-            <div><label>📅 ПРИБУТТЯ:</label><input type="text" id="date_end" class="gray-field" readonly></div>
+        <div class="car-box">
+            <label>🚗 СЛУЖБОВЕ АВТО:</label>
+            <input type="text" id="car" class="gray-field" readonly style="text-align: center; border: none; background: none;">
         </div>
-
-        <div class="row">
-            <div><label>🔢 К-СТЬ ДІБ:</label><input type="text" id="days" class="gray-field" readonly></div>
-            <div><label>🚗 АВТО:</label><input type="text" id="car" class="gray-field" readonly></div>
-        </div>
-
-        <hr>
 
         <div class="row">
             <div><label>📟 ОДОМЕТР СТАРТ:</label><input type="number" id="odo_start" class="gray-field" readonly></div>
-            <div><label>🏁 ОДОМЕТР ФІНІШ:</label><input type="number" id="odo_finish" oninput="calculate()"></div>
+            <div><label>🏁 ОДОМЕТР ФІНІШ:</label><input type="number" id="odo_finish" placeholder="Введіть км" oninput="calculate()"></div>
         </div>
 
         <div class="row">
-            <div><label>⛽ ПАЛИВО СТАРТ (Л):</label><input type="number" id="fuel_start" value="0" oninput="calculate()"></div>
-            <div><label>⛽ ПАЛИВО ФІНІШ (Л):</label><input type="number" id="fuel_finish" value="0" oninput="calculate()"></div>
+            <div><label>⛽ ПАЛИВО ВИЇЗД (Л):</label><input type="number" id="fuel_start" value="0" oninput="calculate()"></div>
+            <div><label>⛽ ПАЛИВО ЗАЇЗД (Л):</label><input type="number" id="fuel_end" value="0" oninput="calculate()"></div>
         </div>
 
+        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+
         <div class="row">
-            <div><label>🏨 ГОТЕЛЬ:</label><input type="number" id="hotel" value="0" oninput="calculate()"></div>
-            <div><label>🍔 ДОБОВІ:</label><input type="number" id="per_diem" value="0" oninput="calculate()"></div>
+            <div><label>🏨 ПРОЖИВАННЯ:</label><input type="number" id="hotel" value="0" oninput="calculate()"></div>
+            <div><label>🍔 ДОБОВІ ВИТРАТИ:</label><input type="number" id="per_diem" value="0" oninput="calculate()"></div>
         </div>
 
         <label>🛠️ ДОДАТКОВІ ВИТРАТИ:</label>
         <input type="number" id="extra_costs" value="0" oninput="calculate()">
+
+        <label>💬 КОМЕНТАР ДО ВИТРАТ:</label>
+        <textarea id="comment" rows="2" placeholder="Опишіть додаткові витрати, якщо вони були..."></textarea>
+
+        <div class="finance-section">
+            <div class="row">
+                <div><label>💰 ОТРИМАНО:</label><input type="number" id="received" class="gray-field" readonly style="text-align: center;"></div>
+                <div><label>💸 ФАКТИЧНО:</label><input type="number" id="actual_total" class="gray-field" readonly style="text-align: center;"></div>
+            </div>
+            <div id="balance_display" class="balance-box">ЗАЛИШОК: 0 грн</div>
+        </div>
 
         <div class="total-box" id="total_display">РАЗОМ ВИТРАТИ: 0 грн</div>
         
@@ -74,9 +99,11 @@
 
         const params = new URLSearchParams(window.location.search);
         document.getElementById('pib').innerText = params.get('pib') || '---';
-        document.getElementById('pos').innerText = params.get('posada') || '---';
-        document.getElementById('vid').innerText = params.get('viddil') || '---';
-        document.getElementById('received').innerText = params.get('money_received') || '0';
+        document.getElementById('pos').innerText = params.get('pos') || '---';
+        document.getElementById('vid').innerText = params.get('vid') || '---';
+        
+        const receivedAmount = parseFloat(params.get('received')) || 0;
+        document.getElementById('received').value = receivedAmount;
 
         document.getElementById('purpose').value = params.get('purpose') || '';
         document.getElementById('destination').value = params.get('dest') || '';
@@ -92,25 +119,45 @@
             const extra = parseFloat(document.getElementById('extra_costs').value) || 0;
             
             const total = hotel + perDiem + extra;
+            const received = parseFloat(document.getElementById('received').value) || 0;
+            const balance = received - total;
+
+            document.getElementById('actual_total').value = total;
             document.getElementById('total_display').innerText = `РАЗОМ ВИТРАТИ: ${total} грн`;
-            return total;
+            
+            const balanceEl = document.getElementById('balance_display');
+            if (balance < 0) {
+                balanceEl.style.color = "red";
+                balanceEl.innerText = `ПЕРЕВИТРАТА: ${Math.abs(balance)} грн`;
+            } else {
+                balanceEl.style.color = "#2e7d32";
+                balanceEl.innerText = `ЗАЛИШОК: ${balance} грн`;
+            }
+            
+            return { total, balance };
         }
 
         function sendData() {
-            const res = {
+            const result = calculate();
+            const data = {
                 form_type: 'report',
                 trip_id: params.get('trip_id'),
                 odo_finish: document.getElementById('odo_finish').value,
                 fuel_start: document.getElementById('fuel_start').value,
-                fuel_finish: document.getElementById('fuel_finish').value,
+                fuel_end: document.getElementById('fuel_end').value,
                 hotel: document.getElementById('hotel').value,
                 per_diem: document.getElementById('per_diem').value,
-                extra: document.getElementById('extra_costs').value,
-                total: calculate()
+                extra_costs: document.getElementById('extra_costs').value,
+                comment: document.getElementById('comment').value,
+                received: document.getElementById('received').value,
+                actual_total: result.total,
+                balance: result.balance
             };
-            tg.sendData(JSON.stringify(res));
+            tg.sendData(JSON.stringify(data));
             tg.close();
         }
+
+        calculate(); // Початковий розрахунок
     </script>
 </body>
 </html>
