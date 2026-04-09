@@ -3,137 +3,145 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Звіт про відрядження</title>
+    <title>Звіт про відрядження Mayer</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: sans-serif; background-color: #f0f2f5; padding: 15px; color: #333; }
-        .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 15px; }
-        h3 { margin-top: 0; color: #007aff; border-bottom: 1px solid #eee; padding-bottom: 8px; }
-        label { display: block; font-size: 12px; color: #666; margin-bottom: 4px; margin-top: 10px; }
-        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; background: #fff; font-size: 14px; }
-        input[readonly] { background-color: #f9f9f9; color: #777; border-color: #eee; }
-        .row { display: flex; gap: 10px; }
-        .col { flex: 1; }
-        .btn { background: #007aff; color: white; border: none; width: 100%; padding: 12px; border-radius: 10px; font-size: 16px; margin-top: 20px; font-weight: bold; }
-        .total-box { background: #e1f5fe; padding: 10px; border-radius: 8px; margin-top: 15px; text-align: center; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f9; padding: 10px; color: #333; }
+        .container { max-width: 500px; margin: auto; }
+        .card { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        h3 { margin-top: 0; color: #1a73e8; font-size: 16px; border-bottom: 2px solid #e8f0fe; padding-bottom: 5px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        label { display: block; font-size: 11px; color: #70757a; margin-top: 8px; font-weight: bold; }
+        input { width: 100%; padding: 8px; border: 1px solid #dadce0; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        input[readonly] { background-color: #f8f9fa; border-color: #eee; color: #555; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { font-size: 11px; text-align: left; color: #70757a; padding: 5px; }
+        td { padding: 5px 0; }
+        .sum-row input { border: none; border-bottom: 1px solid #ccc; border-radius: 0; padding: 5px; }
+        
+        .btn { background: #1a73e8; color: white; border: none; width: 100%; padding: 12px; border-radius: 8px; font-size: 16px; margin-top: 20px; cursor: pointer; font-weight: bold; }
+        .total-box { background: #e8f0fe; padding: 10px; border-radius: 8px; margin-top: 10px; text-align: right; font-weight: bold; }
     </style>
 </head>
 <body>
-
-    <div class="card">
-        <h3>👤 Дані водія</h3>
-        <label>Співробітник</label>
-        <input type="text" id="pib" readonly>
-        <div class="row">
-            <div class="col">
-                <label>Посада</label>
-                <input type="text" id="posada" readonly>
+    <div class="container">
+        <div class="card">
+            <h3>📋 Загальна інформація</h3>
+            <label>Співробітник</label>
+            <input type="text" id="pib" readonly>
+            <div class="grid">
+                <div class="col"><label>Посада</label><input type="text" id="posada" readonly></div>
+                <div class="col"><label>Відділ</label><input type="text" id="viddil" readonly></div>
             </div>
-            <div class="col">
-                <label>Відділ</label>
-                <input type="text" id="viddil" readonly>
+            <label>Мета відрядження</label>
+            <input type="text" id="purpose" readonly>
+        </div>
+
+        <div class="card">
+            <h3>🚗 Показники авто та палива</h3>
+            <label>Автомобіль</label>
+            <input type="text" id="car" readonly>
+            <div class="grid">
+                <div class="col"><label>Одометр Старт</label><input type="number" id="odo_start" readonly></div>
+                <div class="col"><label>Одометр Фініш</label><input type="number" id="odo_finish" placeholder="0" oninput="calculate()"></div>
+            </div>
+            <div class="grid">
+                <div class="col"><label>Паливо початок (л)</label><input type="number" id="fuel_start" readonly></div>
+                <div class="col"><label>Паливо кінець (л)</label><input type="number" id="fuel_end" placeholder="0"></div>
             </div>
         </div>
+
+        <div class="card">
+            <h3>💰 Фактичні витрати (грн)</h3>
+            <table>
+                <thead>
+                    <tr><th>Стаття витрат</th><th>План</th><th>Факт</th></tr>
+                </thead>
+                <tbody>
+                    <tr class="sum-row">
+                        <td>ПММ</td>
+                        <td><input type="number" id="plan_fuel" readonly></td>
+                        <td><input type="number" id="fact_fuel" oninput="calculate()"></td>
+                    </tr>
+                    <tr class="sum-row">
+                        <td>Проживання</td>
+                        <td><input type="number" id="plan_hotel" readonly></td>
+                        <td><input type="number" id="fact_hotel" oninput="calculate()"></td>
+                    </tr>
+                    <tr class="sum-row">
+                        <td>Добові</td>
+                        <td><input type="number" id="plan_perdiem" readonly></td>
+                        <td><input type="number" id="fact_perdiem" oninput="calculate()"></td>
+                    </tr>
+                    <tr class="sum-row">
+                        <td>Інші витрати</td>
+                        <td><input type="number" value="0" readonly></td>
+                        <td><input type="number" id="fact_other" value="0" oninput="calculate()"></td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="total-box">
+                Разом факт: <span id="total_fact">0</span> грн
+            </div>
+        </div>
+
+        <button class="btn" onclick="sendToBot()">Зберегти та надіслати звіт</button>
     </div>
-
-    <div class="card">
-        <h3>🚗 Поїздка та Авто</h3>
-        <label>Маршрут та Мета</label>
-        <input type="text" id="trip_info" readonly>
-        <div class="row">
-            <div class="col">
-                <label>Автомобіль</label>
-                <input type="text" id="car" readonly>
-            </div>
-            <div class="col">
-                <label>№ Поїздки</label>
-                <input type="text" id="trip_id" readonly>
-            </div>
-        </div>
-    </div>
-
-    <div class="card">
-        <h3>📊 Одометр та Паливо</h3>
-        <div class="row">
-            <div class="col">
-                <label>Одометр Старт</label>
-                <input type="number" id="odo_start" readonly>
-            </div>
-            <div class="col">
-                <label>Одометр Фініш</label>
-                <input type="number" id="odo_finish" placeholder="Введіть км" oninput="calculate()">
-            </div>
-        </div>
-        <div class="row">
-            <div class="col">
-                <label>Паливо (Початок)</label>
-                <input type="number" id="fuel_start" readonly>
-            </div>
-            <div class="col">
-                <label>Паливо (Кінець)</label>
-                <input type="number" id="fuel_end" placeholder="Літри">
-            </div>
-        </div>
-    </div>
-
-    <div class="card">
-        <h3>💰 Фінансовий звіт</h3>
-        <label>Сума під звіт (з Плану)</label>
-        <input type="number" id="sum_planned" readonly>
-        
-        <label>Непередбачені витрати</label>
-        <input type="number" id="unforeseen" value="0" oninput="calculate()">
-        
-        <div class="total-box">
-            <strong>Фактично витрачено: <span id="total_fact">0</span> грн</strong>
-        </div>
-    </div>
-
-    <button class="btn" onclick="sendData()">Сформувати Звіт</button>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        // Отримуємо дані з URL (які передасть бот)
-        const urlParams = new URLSearchParams(window.location.search);
-        document.getElementById('pib').value = urlParams.get('pib') || '';
-        document.getElementById('posada').value = urlParams.get('posada') || '';
-        document.getElementById('viddil').value = urlParams.get('viddil') || '';
-        document.getElementById('trip_id').value = urlParams.get('trip_id') || '';
-        document.getElementById('trip_info').value = (urlParams.get('dest') || '') + " | " + (urlParams.get('purpose') || '');
-        document.getElementById('car').value = urlParams.get('car') || '';
+        // Отримання даних з URL
+        const params = new URLSearchParams(window.location.search);
         
-        // Дані з журналу
-        const odoStart = parseFloat(urlParams.get('odo_start')) || 0;
-        const fuelStart = parseFloat(urlParams.get('fuel_start')) || 0;
-        const sumPlanned = parseFloat(urlParams.get('sum_planned')) || 0;
+        // Заповнюємо ReadOnly поля
+        document.getElementById('pib').value = params.get('pib') || '';
+        document.getElementById('posada').value = params.get('posada') || '';
+        document.getElementById('viddil').value = params.get('viddil') || '';
+        document.getElementById('purpose').value = params.get('purpose') || '';
+        document.getElementById('car').value = params.get('car') || '';
+        document.getElementById('odo_start').value = params.get('odo_start') || 0;
+        document.getElementById('fuel_start').value = params.get('fuel_start') || 0;
+        
+        // Заповнюємо планові суми для порівняння
+        document.getElementById('plan_fuel').value = params.get('plan_fuel') || 0;
+        document.getElementById('plan_hotel').value = params.get('plan_hotel') || 0;
+        document.getElementById('plan_perdiem').value = params.get('plan_perdiem') || 0;
 
-        document.getElementById('odo_start').value = odoStart;
-        document.getElementById('fuel_start').value = fuelStart;
-        document.getElementById('sum_planned').value = sumPlanned;
+        // Початкове значення факту (копіюємо з плану)
+        document.getElementById('fact_fuel').value = params.get('plan_fuel') || 0;
+        document.getElementById('fact_hotel').value = params.get('plan_hotel') || 0;
+        document.getElementById('fact_perdiem').value = params.get('plan_perdiem') || 0;
 
         function calculate() {
-            const unforeseen = parseFloat(document.getElementById('unforeseen').value) || 0;
-            const total = sumPlanned + unforeseen;
+            const fuel = parseFloat(document.getElementById('fact_fuel').value) || 0;
+            const hotel = parseFloat(document.getElementById('fact_hotel').value) || 0;
+            const perdiem = parseFloat(document.getElementById('fact_perdiem').value) || 0;
+            const other = parseFloat(document.getElementById('fact_other').value) || 0;
+            
+            const total = fuel + hotel + perdiem + other;
             document.getElementById('total_fact').innerText = total.toFixed(2);
         }
 
-        function sendData() {
+        function sendToBot() {
             const data = {
                 form_type: 'report',
-                trip_id: document.getElementById('trip_id').value,
-                pib: document.getElementById('pib').value,
+                trip_id: params.get('trip_id'),
                 odo_finish: document.getElementById('odo_finish').value,
                 fuel_end: document.getElementById('fuel_end').value,
-                unforeseen: document.getElementById('unforeseen').value,
-                total_fact: document.getElementById('total_fact').innerText
+                fact_fuel: document.getElementById('fact_fuel').value,
+                fact_hotel: document.getElementById('fact_hotel').value,
+                fact_perdiem: document.getElementById('fact_perdiem').value,
+                fact_other: document.getElementById('fact_other').value,
+                total_sum: document.getElementById('total_fact').innerText
             };
             tg.sendData(JSON.stringify(data));
             tg.close();
         }
         
-        calculate(); // Первинний розрахунок
+        calculate();
     </script>
 </body>
 </html>
