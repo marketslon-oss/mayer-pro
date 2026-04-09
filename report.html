@@ -3,77 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Звіт Mayer</title>
+    <title>Звіт про відрядження</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
         .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .user-header { background: #e8f0fe; padding: 12px; border-radius: 10px; margin-bottom: 15px; font-size: 13px; border-left: 5px solid #1a73e8; }
+        .user-header { background: #eef2f7; padding: 12px; border-radius: 10px; margin-bottom: 15px; font-size: 13px; border-left: 5px solid #007aff; }
         label { display: block; font-weight: bold; margin-top: 10px; font-size: 11px; color: #555; text-transform: uppercase; }
         input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin-top: 4px; box-sizing: border-box; font-size: 14px; }
-        .readonly-field { background: #f1f1f1; color: #444; border: 1px dashed #bbb; }
-        .row { display: flex; gap: 10px; }
+        .row { display: flex; gap: 10px; align-items: flex-start; }
         .row > div { flex: 1; }
-        .btn-save { width: 100%; padding: 15px; background: #1a73e8; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; }
+        .gray-field { background: #f9f9f9; color: #444; border: 1px dashed #bbb; }
+        .total-box { background: #eef7ee; color: #2e7d32; border: 1px solid #2e7d32; padding: 12px; border-radius: 8px; text-align: center; margin-top: 15px; font-weight: bold; font-size: 18px; }
+        .btn-save { width: 100%; padding: 15px; background: #007aff; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; cursor: pointer; }
     </style>
 </head>
 <body>
     <div class="card">
         <div class="user-header">
-            <b>ПІБ:</b> <span id="pib_display">...</span><br>
-            <b>Посада:</b> <span id="posada_display">---</span><br>
-            <b>Відділ:</b> <span id="viddil_display">---</span>
+            <b>ПІБ:</b> <span id="pib">...</span><br>
+            <b>Посада:</b> <span id="pos">...</span><br>
+            <b>Відділ:</b> <span id="vid">...</span><br>
+            <b>💵 ОТРИМАНО ПІД ЗВІТ:</b> <span id="received">0</span> грн
         </div>
 
         <label>🎯 МЕТА ВІДРЯДЖЕННЯ:</label>
-        <input type="text" id="purpose" class="readonly-field" readonly>
+        <input type="text" id="purpose" class="gray-field" readonly>
 
         <label>📍 МАРШРУТ:</label>
-        <input type="text" id="dest" class="readonly-field" readonly>
+        <input type="text" id="destination" class="gray-field" readonly>
 
         <div class="row">
-            <div><label>📅 ВИЇЗД:</label><input type="text" id="start" class="readonly-field" readonly></div>
-            <div><label>📅 ПРИБУТТЯ:</label><input type="text" id="end" class="readonly-field" readonly></div>
+            <div><label>📅 ВИЇЗД:</label><input type="text" id="date_start" class="gray-field" readonly></div>
+            <div><label>📅 ПРИБУТТЯ:</label><input type="text" id="date_end" class="gray-field" readonly></div>
         </div>
 
         <div class="row">
-            <div><label>🔢 К-СТЬ ДІБ:</label><input type="text" id="days" class="readonly-field" readonly></div>
-            <div><label>🚗 АВТО:</label><input type="text" id="car" class="readonly-field" readonly></div>
+            <div><label>🔢 К-СТЬ ДІБ:</label><input type="text" id="days" class="gray-field" readonly></div>
+            <div><label>🚗 АВТО:</label><input type="text" id="car" class="gray-field" readonly></div>
         </div>
 
-        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+        <hr>
 
         <div class="row">
-            <div><label>📟 ОДОМЕТР СТАРТ:</label><input type="number" id="odo_start" class="readonly-field" readonly></div>
-            <div><label>🏁 ОДОМЕТР ФІНІШ:</label><input type="number" id="odo_finish" placeholder="0"></div>
+            <div><label>📟 ОДОМЕТР СТАРТ:</label><input type="number" id="odo_start" class="gray-field" readonly></div>
+            <div><label>🏁 ОДОМЕТР ФІНІШ:</label><input type="number" id="odo_finish" oninput="calculate()"></div>
         </div>
 
+        <div class="row">
+            <div><label>⛽ ПАЛИВО СТАРТ (Л):</label><input type="number" id="fuel_start" value="0" oninput="calculate()"></div>
+            <div><label>⛽ ПАЛИВО ФІНІШ (Л):</label><input type="number" id="fuel_finish" value="0" oninput="calculate()"></div>
+        </div>
+
+        <div class="row">
+            <div><label>🏨 ГОТЕЛЬ:</label><input type="number" id="hotel" value="0" oninput="calculate()"></div>
+            <div><label>🍔 ДОБОВІ:</label><input type="number" id="per_diem" value="0" oninput="calculate()"></div>
+        </div>
+
+        <label>🛠️ ДОДАТКОВІ ВИТРАТИ:</label>
+        <input type="number" id="extra_costs" value="0" oninput="calculate()">
+
+        <div class="total-box" id="total_display">РАЗОМ ВИТРАТИ: 0 грн</div>
+        
         <button class="btn-save" onclick="sendData()">💾 Надіслати звіт</button>
     </div>
 
     <script>
-        const tg = window.Telegram.WebApp;
+        let tg = window.Telegram.WebApp;
         tg.expand();
+
         const params = new URLSearchParams(window.location.search);
-        
-        document.getElementById('pib_display').innerText = params.get('pib') || '---';
-        document.getElementById('posada_display').innerText = params.get('posada') || '---';
-        document.getElementById('viddil_display').innerText = params.get('viddil') || '---';
-        document.getElementById('purpose').value = params.get('purpose') || '---';
-        document.getElementById('dest').value = params.get('dest') || '---';
-        document.getElementById('start').value = params.get('start') || '---';
-        document.getElementById('end').value = params.get('end') || '---';
-        document.getElementById('days').value = params.get('days') || '1';
-        document.getElementById('car').value = params.get('car') || '---';
+        document.getElementById('pib').innerText = params.get('pib') || '---';
+        document.getElementById('pos').innerText = params.get('posada') || '---';
+        document.getElementById('vid').innerText = params.get('viddil') || '---';
+        document.getElementById('received').innerText = params.get('money_received') || '0';
+
+        document.getElementById('purpose').value = params.get('purpose') || '';
+        document.getElementById('destination').value = params.get('dest') || '';
+        document.getElementById('date_start').value = params.get('start') || '';
+        document.getElementById('date_end').value = params.get('end') || '';
+        document.getElementById('days').value = params.get('days') || '0';
+        document.getElementById('car').value = params.get('car') || '';
         document.getElementById('odo_start').value = params.get('odo_start') || '0';
 
+        function calculate() {
+            const hotel = parseFloat(document.getElementById('hotel').value) || 0;
+            const perDiem = parseFloat(document.getElementById('per_diem').value) || 0;
+            const extra = parseFloat(document.getElementById('extra_costs').value) || 0;
+            
+            const total = hotel + perDiem + extra;
+            document.getElementById('total_display').innerText = `РАЗОМ ВИТРАТИ: ${total} грн`;
+            return total;
+        }
+
         function sendData() {
-            const data = {
+            const res = {
                 form_type: 'report',
                 trip_id: params.get('trip_id'),
-                odo_finish: document.getElementById('odo_finish').value
+                odo_finish: document.getElementById('odo_finish').value,
+                fuel_start: document.getElementById('fuel_start').value,
+                fuel_finish: document.getElementById('fuel_finish').value,
+                hotel: document.getElementById('hotel').value,
+                per_diem: document.getElementById('per_diem').value,
+                extra: document.getElementById('extra_costs').value,
+                total: calculate()
             };
-            tg.sendData(JSON.stringify(data));
+            tg.sendData(JSON.stringify(res));
             tg.close();
         }
     </script>
