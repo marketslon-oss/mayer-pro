@@ -3,34 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Звіт про відрядження Mayer</title> 
+    <title>Звіт про відрядження Mayer</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
         .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .user-header { background: #f1f1f1; padding: 12px; border-radius: 10px; margin-bottom: 15px; font-size: 13px; border-left: 5px solid #007aff; }
+        .user-header { background: #e8f0fe; padding: 12px; border-radius: 10px; margin-bottom: 15px; font-size: 13px; border-left: 5px solid #1a73e8; }
         label { display: block; font-weight: bold; margin-top: 10px; font-size: 11px; color: #555; text-transform: uppercase; }
-        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin-top: 4px; box-sizing: border-box; font-size: 14px; }
+        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin-top: 4px; box-sizing: border-box; font-size: 14px; background: #fdfdfd; }
+        .readonly-field { background: #f1f1f1; color: #444; border: 1px dashed #bbb; }
         .row { display: flex; gap: 10px; align-items: flex-start; }
         .row > div { flex: 1; }
-        .readonly-field { background: #f9f9f9; color: #777; border: 1px solid #eee; }
-        .total-box { background: #eef2f7; color: #007aff; border: 1px solid #007aff; padding: 12px; border-radius: 8px; text-align: center; margin-top: 15px; font-weight: bold; font-size: 18px; }
-        .btn-save { width: 100%; padding: 15px; background: #007aff; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; cursor: pointer; }
-        h3 { margin: 0 0 10px 0; color: #333; font-size: 18px; text-align: center; }
+        .total-box { background: #eef2f7; color: #1a73e8; border: 1px solid #1a73e8; padding: 12px; border-radius: 8px; text-align: center; margin-top: 15px; font-weight: bold; font-size: 18px; }
+        .btn-save { width: 100%; padding: 15px; background: #1a73e8; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; cursor: pointer; }
     </style>
 </head>
 <body>
     <div class="card">
-        <h3>📋 ЗВІТ ПРО ВІДРЯДЖЕННЯ</h3>
-        
         <div class="user-header">
-            <b>ПІБ:</b> <span id="pib">...</span><br>
-            <b>Посада:</b> <span id="posada">...</span><br>
-            <b>Відділ:</b> <span id="viddil">...</span>
+            <b>ПІБ:</b> <span id="pib_display">...</span><br>
+            <b>Посада:</b> <span id="posada_display">---</span><br>
+            <b>Відділ:</b> <span id="viddil_display">---</span>
         </div>
 
-        <label>🎯 МЕТА ТА МАРШРУТ (З ПЛАНУ):</label>
-        <input type="text" id="info_plan" class="readonly-field" readonly>
+        <label>🎯 МЕТА ВІДРЯДЖЕННЯ:</label>
+        <input type="text" id="purpose" class="readonly-field" readonly>
+
+        <label>📍 МАРШРУТ:</label>
+        <input type="text" id="dest" class="readonly-field" readonly>
 
         <div class="row">
             <div><label>📅 ВИЇЗД:</label><input type="text" id="start" class="readonly-field" readonly></div>
@@ -39,83 +39,50 @@
 
         <div class="row">
             <div><label>🔢 К-СТЬ ДІБ:</label><input type="text" id="days" class="readonly-field" readonly></div>
-            <div><label>🚗 АВТО:</label><input type="text" id="car" class="readonly-field" readonly></div>
+            <div><label>🚗 АВТОМОБІЛЬ:</label><input type="text" id="car" class="readonly-field" readonly></div>
         </div>
 
-        <hr style="margin-top:20px; border: 0; border-top: 1px solid #eee;">
+        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
 
-        <label>🚀 ФАКТИЧНІ ПОКАЗНИКИ:</label>
         <div class="row">
             <div><label>📟 ОДОМЕТР СТАРТ:</label><input type="number" id="odo_start" class="readonly-field" readonly></div>
-            <div><label>🏁 ОДОМЕТР ФІНІШ:</label><input type="number" id="odo_finish" placeholder="Введіть км" oninput="calculate()"></div>
+            <div><label>🏁 ОДОМЕТР ФІНІШ:</label><input type="number" id="odo_finish" placeholder="0"></div>
         </div>
-
-        <div class="row">
-            <div><label>⛽ ПАЛИВО СТАРТ (Л):</label><input type="number" id="fuel_start" class="readonly-field" readonly></div>
-            <div><label>⛽ ПАЛИВО ФІНІШ (Л):</label><input type="number" id="fuel_finish" placeholder="Літри"></div>
-        </div>
-
-        <label>💰 ФАКТИЧНІ ВИТРАТИ (ГРН):</label>
-        <div class="row">
-            <div><label>🏨 ГОТЕЛЬ:</label><input type="number" id="fact_hotel" value="0" oninput="calculate()"></div>
-            <div><label>🍔 ДОБОВІ:</label><input type="number" id="fact_perdiem" value="0" oninput="calculate()"></div>
-        </div>
-        
-        <label>🛠 ІНШІ / НЕПЕРЕДБАЧЕНІ ВИТРАТИ:</label>
-        <input type="number" id="fact_other" value="0" oninput="calculate()">
 
         <div class="total-box" id="total_display">РАЗОМ ФАКТ: 0 грн</div>
-        
-        <button class="btn-save" id="main_btn" onclick="sendData()">💾 Надіслати звіт</button>
+        <button class="btn-save" onclick="sendData()">💾 Надіслати звіт</button>
     </div>
 
     <script>
-        let tg = window.Telegram.WebApp;
+        const tg = window.Telegram.WebApp;
         tg.expand();
 
         const params = new URLSearchParams(window.location.search);
         
-        // Заповнюємо дані з Плану
-        document.getElementById('pib').innerText = params.get('pib') || '---';
-        document.getElementById('posada').innerText = params.get('posada') || '---';
-        document.getElementById('viddil').innerText = params.get('viddil') || '---';
-        document.getElementById('info_plan').value = (params.get('dest') || '') + " | " + (params.get('purpose') || '');
+        // Відображення тексту в шапці
+        document.getElementById('pib_display').innerText = params.get('pib') || '---';
+        document.getElementById('posada_display').innerText = params.get('posada') || '---';
+        document.getElementById('viddil_display').innerText = params.get('viddil') || '---';
+
+        // Заповнення полів
+        document.getElementById('purpose').value = params.get('purpose') || '---';
+        document.getElementById('dest').value = params.get('dest') || '---';
         document.getElementById('start').value = params.get('start') || '---';
         document.getElementById('end').value = params.get('end') || '---';
-        document.getElementById('days').value = params.get('days') || '0';
+        document.getElementById('days').value = params.get('days') || '1';
         document.getElementById('car').value = params.get('car') || '---';
-        
-        // Початкові показники (з Журналу/Плану)
-        document.getElementById('odo_start').value = params.get('odo_start') || 0;
-        document.getElementById('fuel_start').value = params.get('fuel_start') || 0;
-
-        function calculate() {
-            const hotel = parseFloat(document.getElementById('fact_hotel').value) || 0;
-            const perdiem = parseFloat(document.getElementById('fact_perdiem').value) || 0;
-            const other = parseFloat(document.getElementById('fact_other').value) || 0;
-
-            const total = hotel + perdiem + other;
-            document.getElementById('total_display').innerText = `РАЗОМ ФАКТ: ${Math.round(total)} грн`;
-            return total;
-        }
+        document.getElementById('odo_start').value = params.get('odo_start') || '0';
 
         function sendData() {
             const data = {
                 form_type: 'report',
                 trip_id: params.get('trip_id'),
                 odo_finish: document.getElementById('odo_finish').value,
-                fuel_finish: document.getElementById('fuel_finish').value,
-                fact_hotel: document.getElementById('fact_hotel').value,
-                fact_perdiem: document.getElementById('fact_perdiem').value,
-                fact_other: document.getElementById('fact_other').value,
-                total_fact: calculate()
+                pib: params.get('pib')
             };
-            
             tg.sendData(JSON.stringify(data));
             tg.close();
         }
-
-        calculate();
     </script>
 </body>
 </html>
