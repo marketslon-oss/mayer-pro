@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Звіт Mayer v5.5</title>
+    <title>Звіт Mayer v5.7</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
@@ -27,18 +27,15 @@
         .odo-section { background: #fdf2f2; padding: 10px; border-radius: 8px; border: 1px solid #f5c6cb; margin-bottom: 10px; }
         .fact-km { color: #d9534f; font-weight: bold; text-align: center; font-size: 13px; margin-top: 8px; }
 
+        /* Компактні кнопки завантаження як у Плані */
+        .btn-upload { background: #5d8aa8; padding: 10px; font-size: 12px; margin-top: 5px; color: white; border: none; border-radius: 5px; width: 100%; cursor: pointer; font-weight: bold; }
+        .file-status { font-size: 10px; color: #666; margin-top: 4px; text-align: center; }
+
         .finance-section { background: #f0f7ff; padding: 12px; border-radius: 10px; border: 1px solid #cce5ff; margin-top: 15px; }
-        .total-box { background: #eef7ee; color: #2e7d32; border: 1px solid #2e7d32; padding: 12px; border-radius: 8px; text-align: center; margin-top: 15px; font-weight: bold; font-size: 18px; }
-        .balance-box { font-size: 14px; margin-top: 8px; text-align: center; font-weight: bold; }
+        .total-box { background: #eef7ee; color: #2e7d32; border: 1px solid #2e7d32; padding: 12px; border-radius: 8px; text-align: center; margin-top: 10px; font-weight: bold; font-size: 18px; }
+        .balance-box { font-size: 14px; margin-top: 5px; text-align: center; font-weight: bold; }
 
-        /* Стиль для нових кнопок файлу та фото */
-        .upload-buttons { margin: 15px 0; padding: 10px; border: 1px dashed #71a95e; border-radius: 10px; background: #f9fff9; text-align: center; }
-        .btn-file, .btn-photo { background: #f1f1f1; border: 1px solid #ccc; padding: 12px; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer; color: #333; margin-top: 6px; display: inline-block; width: 45%; }
-        .btn-photo { background: #71a95e; color: white; border: none; margin-left: 10px; }
-        .file-input { display: none; }
-        .file-status { font-size: 10px; color: #666; margin-top: 6px; }
-
-        .btn-save { width: 100%; padding: 15px; background: #333; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; cursor: pointer; }
+        .btn-save { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -90,18 +87,20 @@
         </div>
         
         <label>📝 ПРИМІТКА ДО ВИТРАТ:</label>
-        <textarea id="comment" rows="2" placeholder="Деталі додаткових витрат..."></textarea>
+        <textarea id="comment" rows="2" placeholder="Деталі витрат..."></textarea>
 
-        <div class="upload-buttons">
-            <label>📸 ДОДАТИ ДОКАЗИ (ЧЕКИ, ОДОМЕТР)</label>
+        <label>📎 ДОДАТИ ДОКУМЕНТИ (ЧЕКИ, ОДО):</label>
+        <div class="row">
             <div>
-                <button type="button" class="btn-file" onclick="document.getElementById('file_general').click()">📄 Вибрати Файл</button>
-                <button type="button" class="btn-photo" onclick="document.getElementById('file_photo').click()">📷 Зробити Фото</button>
+                <button type="button" class="btn-upload" onclick="document.getElementById('f1').click()">📁 ФАЙЛ</button>
+                <input type="file" id="f1" style="display:none" multiple onchange="updateStatus()">
             </div>
-            <input type="file" id="file_general" class="file-input" multiple onchange="updateStatus('file_general', '📄')">
-            <input type="file" id="file_photo" class="file-input" accept="image/*" capture="camera" onchange="updateStatus('file_photo', '📷')">
-            <div id="file_status" class="file-status">Файли не вибрані</div>
+            <div>
+                <button type="button" class="btn-upload" onclick="document.getElementById('f2').click()">📷 ФОТО</button>
+                <input type="file" id="f2" accept="image/*" capture="camera" style="display:none" onchange="updateStatus()">
+            </div>
         </div>
+        <div id="file_status" class="file-status">Файли не вибрані</div>
 
         <div class="finance-section">
             <div class="row" style="margin-bottom: 0;">
@@ -135,11 +134,12 @@
         document.getElementById('car').value = params.get('car') || '';
         document.getElementById('odo_start').value = params.get('odo_start') || '0';
 
-        function updateStatus(inputId, icon) {
-            const input = document.getElementById(inputId);
+        function updateStatus() {
+            const f1 = document.getElementById('f1').files.length;
+            const f2 = document.getElementById('f2').files.length;
             const status = document.getElementById('file_status');
-            if (input.files.length > 0) {
-                status.innerText = `${icon} Вибрано файлів: ${input.files.length}`;
+            if (f1 + f2 > 0) {
+                status.innerText = `✅ Додано файлів: ${f1 + f2}`;
                 status.style.color = "#2e7d32";
             } else {
                 status.innerText = "Файли не вибрані";
