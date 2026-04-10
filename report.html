@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Звіт Mayer v5.7</title>
+    <title>Звіт Mayer v6.0</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
@@ -27,15 +27,15 @@
         .odo-section { background: #fdf2f2; padding: 10px; border-radius: 8px; border: 1px solid #f5c6cb; margin-bottom: 10px; }
         .fact-km { color: #d9534f; font-weight: bold; text-align: center; font-size: 13px; margin-top: 8px; }
 
-        /* Компактні кнопки завантаження як у Плані */
-        .btn-upload { background: #5d8aa8; padding: 10px; font-size: 12px; margin-top: 5px; color: white; border: none; border-radius: 5px; width: 100%; cursor: pointer; font-weight: bold; }
-        .file-status { font-size: 10px; color: #666; margin-top: 4px; text-align: center; }
-
         .finance-section { background: #f0f7ff; padding: 12px; border-radius: 10px; border: 1px solid #cce5ff; margin-top: 15px; }
         .total-box { background: #eef7ee; color: #2e7d32; border: 1px solid #2e7d32; padding: 12px; border-radius: 8px; text-align: center; margin-top: 10px; font-weight: bold; font-size: 18px; }
         .balance-box { font-size: 14px; margin-top: 5px; text-align: center; font-weight: bold; }
 
-        .btn-save { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; cursor: pointer; }
+        /* Компактні кнопки завантаження в самому низу */
+        .btn-upload { background: #5d8aa8; padding: 10px; font-size: 12px; color: white; border: none; border-radius: 5px; width: 100%; cursor: pointer; font-weight: bold; text-transform: uppercase; }
+        .file-status { font-size: 10px; color: #666; margin-top: 4px; text-align: center; }
+
+        .btn-save { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 12px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -89,8 +89,18 @@
         <label>📝 ПРИМІТКА ДО ВИТРАТ:</label>
         <textarea id="comment" rows="2" placeholder="Деталі витрат..."></textarea>
 
-        <label>📎 ДОДАТИ ДОКУМЕНТИ (ЧЕКИ, ОДО):</label>
-        <div class="row">
+        <div class="finance-section">
+            <div class="row" style="margin-bottom: 0;">
+                <div><label>💰 ОТРИМАНО:</label><input type="number" id="received" class="gray-field" readonly style="text-align: center;"></div>
+                <div><label>💸 ФАКТИЧНО:</label><input type="number" id="actual_total" class="gray-field" readonly style="text-align: center;"></div>
+            </div>
+            <div id="balance_display" class="balance-box">ЗАЛИШОК: 0 грн</div>
+        </div>
+
+        <div class="total-box" id="total_display">РАЗОМ ВИТРАТИ: 0 грн</div>
+
+        <label style="margin-top: 15px;">📎 ДОДАТИ ДОКУМЕНТИ:</label>
+        <div class="row" style="margin-bottom: 5px;">
             <div>
                 <button type="button" class="btn-upload" onclick="document.getElementById('f1').click()">📁 ФАЙЛ</button>
                 <input type="file" id="f1" style="display:none" multiple onchange="updateStatus()">
@@ -102,15 +112,6 @@
         </div>
         <div id="file_status" class="file-status">Файли не вибрані</div>
 
-        <div class="finance-section">
-            <div class="row" style="margin-bottom: 0;">
-                <div><label>💰 ОТРИМАНО:</label><input type="number" id="received" class="gray-field" readonly style="text-align: center;"></div>
-                <div><label>💸 ФАКТИЧНО:</label><input type="number" id="actual_total" class="gray-field" readonly style="text-align: center;"></div>
-            </div>
-            <div id="balance_display" class="balance-box">ЗАЛИШОК: 0 грн</div>
-        </div>
-
-        <div class="total-box" id="total_display">РАЗОМ ВИТРАТИ: 0 грн</div>
         <button class="btn-save" onclick="sendData()">💾 Надіслати звіт</button>
     </div>
 
@@ -139,7 +140,7 @@
             const f2 = document.getElementById('f2').files.length;
             const status = document.getElementById('file_status');
             if (f1 + f2 > 0) {
-                status.innerText = `✅ Додано файлів: ${f1 + f2}`;
+                status.innerText = `✅ Додано документів: ${f1 + f2}`;
                 status.style.color = "#2e7d32";
             } else {
                 status.innerText = "Файли не вибрані";
