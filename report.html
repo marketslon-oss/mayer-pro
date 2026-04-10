@@ -15,10 +15,11 @@
         .compact-dates label { margin-top: 0; font-size: 9px; font-weight: bold; text-transform: uppercase; }
         .compact-dates input { padding: 6px; font-size: 12px; text-align: center; border-radius: 5px; border: 1px solid #ccc; }
 
-        label { display: block; font-weight: bold; margin-top: 8px; font-size: 11px; color: #555; text-transform: uppercase; }
+        label { display: block; font-weight: bold; margin-top: 8px; font-size: 10px; color: #555; text-transform: uppercase; line-height: 1.2; min-height: 24px; }
         input, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin-top: 4px; box-sizing: border-box; font-size: 14px; }
-        .row { display: flex; gap: 10px; align-items: flex-start; }
-        .row > div { flex: 1; }
+        
+        .row { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 5px; }
+        .row > div { flex: 1; display: flex; flex-direction: column; }
         
         .car-box { text-align: center; background: #f9f9f9; padding: 8px; border-radius: 10px; border: 1px solid #eee; margin: 10px 0; }
         .gray-field { background: #f9f9f9; color: #444; border: 1px dashed #bbb; font-weight: bold; }
@@ -48,7 +49,7 @@
         </div>
 
         <div class="car-box">
-            <label style="margin-top:0;">🚗 СЛУЖБОВЕ АВТО</label>
+            <label style="margin-top:0; min-height: auto;">🚗 СЛУЖБОВЕ АВТО</label>
             <input type="text" id="car" class="gray-field" readonly style="text-align: center; border: none; background: none; padding: 2px;">
         </div>
 
@@ -72,8 +73,8 @@
         </div>
 
         <div class="row">
-            <div><label>🏨 ПРОЖИВАННЯ:</label><input type="number" id="hotel" value="0" oninput="calculate()"></div>
-            <div><label>🍔 ДОБОВІ ВИТРАТИ:</label><input type="number" id="per_diem" value="0" oninput="calculate()"></div>
+            <div><label>🏨 ПРОЖИВАННЯ (ГРН):</label><input type="number" id="hotel" value="0" oninput="calculate()"></div>
+            <div><label>🍔 ДОБОВІ ВИТРАТИ (ГРН):</label><input type="number" id="per_diem" value="0" oninput="calculate()"></div>
         </div>
 
         <div class="row">
@@ -81,7 +82,8 @@
             <div><label>🛠️ ДОДАТКОВІ ВИТРАТИ:</label><input type="number" id="extra_costs" value="0" oninput="calculate()"></div>
         </div>
         
-        <textarea id="comment" rows="2" placeholder="Примітка до витрат..."></textarea>
+        <label>📝 ПРИМІТКА ДО ВИТРАТ:</label>
+        <textarea id="comment" rows="2" placeholder="Вкажіть деталі додаткових витрат..."></textarea>
 
         <div class="finance-section">
             <div class="row">
