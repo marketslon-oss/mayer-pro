@@ -3,30 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Звіт про відрядження v4.5</title>
+    <title>Звіт про відрядження Mayer</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
         .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        
         .user-header { background: #f1f1f1; padding: 12px; border-radius: 10px; margin-bottom: 10px; font-size: 13px; border-left: 5px solid #71a95e; }
         
-        /* Компактний блок дат */
         .compact-dates { background: #fff9e6; padding: 8px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #ffeeba; display: flex; gap: 8px; justify-content: space-between; }
         .compact-dates > div { flex: 1; }
-        .compact-dates label { margin-top: 0; font-size: 9px; }
-        .compact-dates input { padding: 6px; font-size: 12px; text-align: center; }
+        .compact-dates label { margin-top: 0; font-size: 9px; font-weight: bold; text-transform: uppercase; }
+        .compact-dates input { padding: 6px; font-size: 12px; text-align: center; border-radius: 5px; border: 1px solid #ccc; }
 
         label { display: block; font-weight: bold; margin-top: 8px; font-size: 11px; color: #555; text-transform: uppercase; }
         input, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; margin-top: 4px; box-sizing: border-box; font-size: 14px; }
-        
         .row { display: flex; gap: 10px; align-items: flex-start; }
         .row > div { flex: 1; }
         
         .car-box { text-align: center; background: #f9f9f9; padding: 8px; border-radius: 10px; border: 1px solid #eee; margin: 10px 0; }
         .gray-field { background: #f9f9f9; color: #444; border: 1px dashed #bbb; font-weight: bold; }
         
-        /* Секція одометра */
         .odo-section { background: #fdf2f2; padding: 10px; border-radius: 8px; border: 1px solid #f5c6cb; margin-bottom: 10px; }
         .fact-km { color: #d9534f; font-weight: bold; text-align: center; font-size: 13px; margin-top: 5px; }
 
@@ -56,29 +52,35 @@
             <input type="text" id="car" class="gray-field" readonly style="text-align: center; border: none; background: none; padding: 2px;">
         </div>
 
-        <label>🎯 МЕТА ТА МАРШРУТ (ПЛАН):</label>
-        <input type="text" id="info_plan" class="gray-field" readonly style="font-size: 12px;">
+        <label>🎯 МЕТА ВІДРЯДЖЕННЯ:</label>
+        <input type="text" id="purpose" class="gray-field" readonly>
+
+        <label>📍 МАРШРУТ (ПЛАН):</label>
+        <input type="text" id="destination" class="gray-field" readonly>
 
         <div class="odo-section">
             <div class="row">
-                <div><label>📟 ОДО СТАРТ:</label><input type="number" id="odo_start" class="gray-field" readonly></div>
-                <div><label>🏁 ОДО ФІНІШ:</label><input type="number" id="odo_finish" placeholder="КМ" oninput="calculate()"></div>
+                <div><label>📟 ОДОМЕТР ВИЇЗД:</label><input type="number" id="odo_start" class="gray-field" readonly></div>
+                <div><label>🏁 ОДОМЕТР ПРИБУТТЯ:</label><input type="number" id="odo_finish" placeholder="0" oninput="calculate()"></div>
             </div>
             <div id="fact_km_display" class="fact-km">ФАКТИЧНИЙ ПРОБІГ: 0 КМ</div>
         </div>
 
         <div class="row">
-            <div><label>⛽ ПАЛИВО ВИЇЗД (Л):</label><input type="number" id="fuel_start" value="0"></div>
-            <div><label>⛽ ПАЛИВО ЗАЇЗД (Л):</label><input type="number" id="fuel_end" value="0"></div>
+            <div><label>⛽ ПАЛИВО ВИЇЗД (Л):</label><input type="number" id="fuel_start" value="0" oninput="calculate()"></div>
+            <div><label>⛽ ПАЛИВО ПРИБУТТЯ (Л):</label><input type="number" id="fuel_end" value="0" oninput="calculate()"></div>
         </div>
 
         <div class="row">
             <div><label>🏨 ПРОЖИВАННЯ:</label><input type="number" id="hotel" value="0" oninput="calculate()"></div>
-            <div><label>🍔 ДОБОВІ:</label><input type="number" id="per_diem" value="0" oninput="calculate()"></div>
+            <div><label>🍔 ДОБОВІ ВИТРАТИ:</label><input type="number" id="per_diem" value="0" oninput="calculate()"></div>
         </div>
 
-        <label>🛠️ ДОДАТКОВІ ВИТРАТИ:</label>
-        <input type="number" id="extra_costs" value="0" oninput="calculate()">
+        <div class="row">
+            <div><label>🚌 ГРОМАДСЬКИЙ ТРАНСПОРТ:</label><input type="number" id="public_transport" value="0" oninput="calculate()"></div>
+            <div><label>🛠️ ДОДАТКОВІ ВИТРАТИ:</label><input type="number" id="extra_costs" value="0" oninput="calculate()"></div>
+        </div>
+        
         <textarea id="comment" rows="2" placeholder="Примітка до витрат..."></textarea>
 
         <div class="finance-section">
@@ -90,23 +92,23 @@
         </div>
 
         <div class="total-box" id="total_display">РАЗОМ ВИТРАТИ: 0 грн</div>
-        
         <button class="btn-save" onclick="sendData()">💾 Надіслати звіт</button>
     </div>
 
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
-
         const params = new URLSearchParams(window.location.search);
+
         document.getElementById('pib').innerText = params.get('pib') || '---';
         document.getElementById('pos').innerText = params.get('pos') || '---';
         document.getElementById('vid').innerText = params.get('vid') || '---';
         
         const received = parseFloat(params.get('received')) || 0;
         document.getElementById('received').value = received;
-
-        document.getElementById('info_plan').value = (params.get('dest') || '') + " | " + (params.get('purpose') || '');
+        
+        document.getElementById('purpose').value = params.get('purpose') || '';
+        document.getElementById('destination').value = params.get('dest') || '';
         document.getElementById('date_start').value = params.get('start') || '';
         document.getElementById('date_end').value = params.get('end') || '';
         document.getElementById('days').value = params.get('days') || '0';
@@ -114,18 +116,17 @@
         document.getElementById('odo_start').value = params.get('odo_start') || '0';
 
         function calculate() {
-            // Розрахунок КМ
             const startKm = parseFloat(document.getElementById('odo_start').value) || 0;
             const endKm = parseFloat(document.getElementById('odo_finish').value) || 0;
-            const factKm = endKm > startKm ? endKm - startKm : 0;
+            const factKm = (endKm > startKm) ? (endKm - startKm) : 0;
             document.getElementById('fact_km_display').innerText = `ФАКТИЧНИЙ ПРОБІГ: ${factKm} КМ`;
 
-            // Розрахунок Грошей
             const hotel = parseFloat(document.getElementById('hotel').value) || 0;
             const perDiem = parseFloat(document.getElementById('per_diem').value) || 0;
+            const transport = parseFloat(document.getElementById('public_transport').value) || 0;
             const extra = parseFloat(document.getElementById('extra_costs').value) || 0;
             
-            const total = hotel + perDiem + extra;
+            const total = hotel + perDiem + transport + extra;
             const balance = received - total;
 
             document.getElementById('actual_total').value = total;
@@ -139,7 +140,6 @@
                 balanceEl.style.color = "#2e7d32";
                 balanceEl.innerText = `ЗАЛИШОК: ${balance} грн`;
             }
-            
             return { total, balance, factKm };
         }
 
@@ -154,6 +154,7 @@
                 fuel_end: document.getElementById('fuel_end').value,
                 hotel: document.getElementById('hotel').value,
                 per_diem: document.getElementById('per_diem').value,
+                public_transport: document.getElementById('public_transport').value,
                 extra: document.getElementById('extra_costs').value,
                 comment: document.getElementById('comment').value,
                 received: received,
