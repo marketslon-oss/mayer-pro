@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Звіт Mayer v8.5</title>
+    <title>Звіт Mayer v9.0</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
@@ -39,7 +39,7 @@
                 <div><label>🏁 ОДО ПРИБУТТЯ</label><input type="number" id="o_end" class="gray" readonly></div>
             </div>
             <div style="text-align:center; font-size:11px; font-weight:bold; color:#d9534f;">
-                ПРОБІГ: <span id="km_txt">0</span> КМ | ⛽ ПАЛИВО: <span id="fl_txt">0</span> Л
+                ПРОБІГ ЗА ЖУРНАЛОМ: <span id="km_txt">0</span> КМ | ⛽ ПАЛИВО: <span id="fl_txt">0</span> Л
             </div>
         </div>
 
@@ -58,8 +58,15 @@
             <div><label>⛽ ЗАПРАВКА (ГРН)</label><input type="number" id="f_money" class="gray" readonly></div>
         </div>
 
+        <div class="row">
+            <div><label>💰 ОТРИМАНО</label><input type="number" id="received" class="gray" readonly style="text-align: center;"></div>
+            <div id="bal_container" style="text-align: center;">
+                <label>⚖️ ЗАЛИШОК / ПЕРЕВИТРАТА</label>
+                <div id="bal_txt" style="font-weight: bold; font-size: 14px; padding-top: 8px;">0 грн</div>
+            </div>
+        </div>
+
         <div class="total-box" id="total_display">РАЗОМ ВИТРАТИ: 0 грн</div>
-        <div id="bal_txt" style="text-align:center; font-weight:bold; margin-top:5px; font-size:13px;"></div>
 
         <div class="row" style="margin-top:15px;">
             <div><button class="btn-up" onclick="document.getElementById('f1').click()">📁 ФАЙЛ</button><input type="file" id="f1" style="display:none"></div>
@@ -71,8 +78,10 @@
 
     <script>
         let tg = window.Telegram.WebApp;
+        tg.expand();
         const p = new URLSearchParams(window.location.search);
 
+        // Наповнення даними з URL
         document.getElementById('pib').innerText = p.get('pib') || '---';
         document.getElementById('pos').innerText = p.get('posada') || '---';
         document.getElementById('vid').innerText = p.get('viddil') || '---';
@@ -80,6 +89,9 @@
         document.getElementById('end').value = p.get('end') || '';
         document.getElementById('days').value = p.get('days') || '1';
         
+        const rec = parseFloat(p.get('money_received')) || 0;
+        document.getElementById('received').value = rec;
+
         const os = parseFloat(p.get('o_start')) || 0;
         const oe = parseFloat(p.get('o_end')) || 0;
         document.getElementById('o_start').value = os;
@@ -94,23 +106,23 @@
             const t = parseFloat(document.getElementById('trans').value) || 0;
             const e = parseFloat(document.getElementById('extra').value) || 0;
             const fm = parseFloat(document.getElementById('f_money').value) || 0;
-            const rec = parseFloat(p.get('money_received')) || 0;
 
             const total = h + d + t + e + fm;
             const bal = rec - total;
 
             document.getElementById('total_display').innerText = `РАЗОМ ВИТРАТИ: ${total.toFixed(0)} грн`;
             const bEl = document.getElementById('bal_txt');
-            bEl.style.color = bal < 0 ? "red" : "green";
-            bEl.innerText = bal < 0 ? `ПЕРЕВИТРАТА: ${Math.abs(bal).toFixed(0)} грн` : `ЗАЛИШОК: ${bal.toFixed(0)} грн`;
+            bEl.style.color = bal < 0 ? "#d9534f" : "#2e7d32";
+            bEl.innerText = bal < 0 ? `ПЕРЕВИТРАТА: ${Math.abs(bal).toFixed(0)} грн` : `${bal.toFixed(0)} грн`;
         }
 
         function send() {
-            tg.sendData(JSON.stringify({
+            const result = {
                 trip_id: p.get('trip_id'),
-                total: document.getElementById('total_display').innerText,
-                status: 'completed'
-            }));
+                total_spent: document.getElementById('total_display').innerText,
+                comment: document.getElementById('comm').value
+            };
+            tg.sendData(JSON.stringify(result));
             tg.close();
         }
         calc();
