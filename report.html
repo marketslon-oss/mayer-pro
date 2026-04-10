@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Звіт Mayer v7.2</title>
+    <title>Звіт Mayer v7.8</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
@@ -20,11 +20,10 @@
         .car-box { text-align: center; background: #f9f9f9; padding: 8px; border-radius: 10px; border: 1px solid #eee; margin: 10px 0; }
         .gray-field { background: #f9f9f9; color: #444; border: 1px dashed #bbb; font-weight: bold; }
         .odo-section { background: #fdf2f2; padding: 10px; border-radius: 8px; border: 1px solid #f5c6cb; margin-bottom: 10px; }
-        .fact-km { color: #d9534f; font-weight: bold; text-align: center; font-size: 12px; margin-top: 5px; }
-        .btn-upload { background: #5d8aa8; padding: 10px; font-size: 11px; color: white; border: none; border-radius: 5px; width: 100%; cursor: pointer; font-weight: bold; }
+        .fact-km { color: #d9534f; font-weight: bold; text-align: center; font-size: 12px; margin-top: 8px; }
+        .btn-upload { background: #5d8aa8; padding: 10px; font-size: 12px; color: white; border: none; border-radius: 5px; width: 100%; cursor: pointer; font-weight: bold; }
         .finance-section { background: #f0f7ff; padding: 12px; border-radius: 10px; border: 1px solid #cce5ff; margin-top: 15px; }
         .total-box { background: #eef7ee; color: #2e7d32; border: 1px solid #2e7d32; padding: 12px; border-radius: 8px; text-align: center; margin-top: 10px; font-weight: bold; font-size: 18px; }
-        .balance-box { font-size: 14px; margin-top: 5px; text-align: center; font-weight: bold; }
         .btn-save { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 12px; cursor: pointer; }
     </style>
 </head>
@@ -43,24 +42,19 @@
 
         <div class="car-box">
             <label style="margin-top:0;">🚗 СЛУЖБОВЕ АВТО</label>
-            <input type="text" id="car" class="gray-field" readonly style="text-align: center; border: none; background: none; padding: 2px;">
+            <input type="text" id="car_name" class="gray-field" readonly style="text-align: center; border: none; background: none;">
         </div>
 
         <div class="odo-section">
-            <div class="row" style="margin-bottom: 5px;">
-                <div><label>📟 ОДО ВИЇЗД:</label><input type="number" id="odo_start" class="gray-field" readonly></div>
-                <div><label>🏁 ОДО ПРИБУТТЯ:</label><input type="number" id="odo_finish" class="gray-field" readonly></div>
+            <div class="row" style="margin-bottom: 0;">
+                <div><label>📟 ОДО ВИЇЗД:</label><input type="number" id="o_start" class="gray-field" readonly></div>
+                <div><label>🏁 ОДО ПРИБУТТЯ:</label><input type="number" id="o_end" class="gray-field" readonly></div>
             </div>
-            <div id="fact_km_display" class="fact-km">ПРОБІГ (ЖУРНАЛ): 0 КМ</div>
-            <div style="margin-top: 8px;">
-                <label>⛽ ВИТРАЧЕНО ПАЛИВА ПО ЧЕКАМ (Л):</label>
-                <input type="number" id="fuel_liters_fact" class="gray-field" readonly style="color: #d9534f; text-align: center;">
+            <div id="km_fact" class="fact-km">ПРОБІГ ЗА ЖУРНАЛОМ: 0 КМ</div>
+            <div style="margin-top:5px; text-align: center;">
+                <label>⛽ ПАЛИВО ПО ЧЕКАМ (Л):</label>
+                <input type="number" id="f_liters" class="gray-field" readonly style="width: 80px; text-align: center; color: #d9534f;">
             </div>
-        </div>
-
-        <div class="row">
-            <div><label>⛽ ПАЛИВО СТАРТ:</label><input type="number" id="fuel_start" class="gray-field" readonly></div>
-            <div><label>⛽ ПАЛИВО КІНЕЦЬ:</label><input type="number" id="fuel_end" class="gray-field" readonly></div>
         </div>
 
         <div class="row">
@@ -69,105 +63,87 @@
         </div>
 
         <div class="row">
-            <div><label>🚌 ГРОМ. ТРАНСПОРТ:</label><input type="number" id="public_transport" value="0" oninput="calculate()"></div>
-            <div><label>🛠️ ДОДАТКОВІ:</label><input type="number" id="extra_costs" value="0" oninput="calculate()"></div>
+            <div><label>🚌 ТРАНСПОРТ:</label><input type="number" id="transport" value="0" oninput="calculate()"></div>
+            <div><label>🛠️ ДОДАТКОВІ:</label><input type="number" id="extra" value="0" oninput="calculate()"></div>
         </div>
 
         <div class="row">
-            <div style="flex: 1.5;"><label>📝 ПРИМІТКА:</label><textarea id="comment" rows="1" placeholder="Деталі..."></textarea></div>
-            <div><label>⛽ СУМА ЗАПРАВКИ (ГРН):</label><input type="number" id="fuel_money_journal" class="gray-field" readonly style="color: #2e7d32;"></div>
+            <div style="flex: 1.5;"><label>📝 ПРИМІТКА:</label><textarea id="comment" rows="1"></textarea></div>
+            <div><label>⛽ ЗАПРАВКА (ГРН):</label><input type="number" id="f_money" class="gray-field" readonly style="color: #2e7d32;"></div>
         </div>
 
         <div class="finance-section">
             <div class="row" style="margin-bottom: 0;">
                 <div><label>💰 ОТРИМАНО:</label><input type="number" id="received" class="gray-field" readonly style="text-align: center;"></div>
-                <div><label>💸 ФАКТИЧНО:</label><input type="number" id="actual_total" class="gray-field" readonly style="text-align: center;"></div>
+                <div><label>💸 ФАКТИЧНО:</label><input type="number" id="actual" class="gray-field" readonly style="text-align: center;"></div>
             </div>
-            <div id="balance_display" class="balance-box">ЗАЛИШОК: 0 грн</div>
+            <div id="balance_display" style="text-align: center; font-weight: bold; margin-top: 5px;">ЗАЛИШОК: 0 грн</div>
         </div>
 
         <div class="total-box" id="total_display">РАЗОМ ВИТРАТИ: 0 грн</div>
 
-        <div class="row" style="margin-top: 10px; margin-bottom: 5px;">
-            <div><button type="button" class="btn-upload" onclick="document.getElementById('f1').click()">📁 ФАЙЛ</button><input type="file" id="f1" style="display:none" multiple onchange="updateStatus()"></div>
-            <div><button type="button" class="btn-upload" onclick="document.getElementById('f2').click()">📷 ФОТО</button><input type="file" id="f2" accept="image/*" capture="camera" style="display:none" onchange="updateStatus()"></div>
+        <div class="row" style="margin-top: 10px;">
+            <div><button type="button" class="btn-upload" onclick="document.getElementById('f1').click()">📁 ФАЙЛ</button><input type="file" id="f1" style="display:none" multiple onchange="updateFiles()"></div>
+            <div><button type="button" class="btn-upload" onclick="document.getElementById('f2').click()">📷 ФОТО</button><input type="file" id="f2" accept="image/*" capture="camera" style="display:none" onchange="updateFiles()"></div>
         </div>
-        <div id="file_status" style="font-size: 10px; text-align: center; color: #666;">Файли не вибрані</div>
+        <div id="file_status" style="font-size: 10px; text-align: center; color: #666; margin-top: 4px;">Файли не вибрані</div>
 
-        <button class="btn-save" onclick="sendData()">💾 Надіслати звіт</button>
+        <button class="btn-save" onclick="send()">💾 Надіслати звіт</button>
     </div>
 
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
-        const params = new URLSearchParams(window.location.search);
+        const p = new URLSearchParams(window.location.search);
 
-        // Дані з trips_base
-        document.getElementById('pib').innerText = params.get('pib') || '---';
-        document.getElementById('pos').innerText = params.get('pos') || '---';
-        document.getElementById('vid').innerText = params.get('vid') || '---';
-        document.getElementById('car').value = params.get('car') || '';
-        document.getElementById('date_start').value = params.get('start') || '';
-        document.getElementById('date_end').value = params.get('end') || '';
-        document.getElementById('days').value = params.get('days') || '1';
-        
-        const received = parseFloat(params.get('received')) || 0;
-        document.getElementById('received').value = received;
+        document.getElementById('pib').innerText = p.get('pib') || '---';
+        document.getElementById('pos').innerText = p.get('posada') || '---';
+        document.getElementById('vid').innerText = p.get('viddil') || '---';
+        document.getElementById('car_name').value = p.get('car') || '';
+        document.getElementById('date_start').value = p.get('start') || '';
+        document.getElementById('date_end').value = p.get('end') || '';
+        document.getElementById('days').value = p.get('days') || '1';
+        document.getElementById('received').value = p.get('received') || '0';
 
-        // Дані з Журналу (одометри, паливо, суми)
-        const o_start = parseFloat(params.get('odo_start')) || 0;
-        const o_end = parseFloat(params.get('odo_finish')) || 0;
-        document.getElementById('odo_start').value = o_start;
-        document.getElementById('odo_finish').value = o_end;
-        document.getElementById('fact_km_display').innerText = `ПРОБІГ (ЖУРНАЛ): ${o_end - o_start} КМ`;
+        // Дані Журналу
+        const os = parseFloat(p.get('o_start')) || 0;
+        const oe = parseFloat(p.get('o_end')) || 0;
+        document.getElementById('o_start').value = os;
+        document.getElementById('o_end').value = oe;
+        document.getElementById('km_fact').innerText = `ПРОБІГ ЗА ЖУРНАЛОМ: ${oe - os} КМ`;
+        document.getElementById('f_liters').value = p.get('f_liters') || '0';
+        document.getElementById('f_money').value = p.get('f_money') || '0';
 
-        document.getElementById('fuel_start').value = params.get('f_start') || '0';
-        document.getElementById('fuel_end').value = params.get('f_end') || '0';
-        document.getElementById('fuel_liters_fact').value = params.get('f_liters') || '0';
-        
-        const fuelMoneyJournal = parseFloat(params.get('f_money')) || 0;
-        document.getElementById('fuel_money_journal').value = fuelMoneyJournal;
-
-        function updateStatus() {
+        function updateFiles() {
             const count = document.getElementById('f1').files.length + document.getElementById('f2').files.length;
-            document.getElementById('file_status').innerText = count > 0 ? `✅ Додано документів: ${count}` : "Файли не вибрані";
+            document.getElementById('file_status').innerText = count > 0 ? `✅ Додано файлів: ${count}` : "Файли не вибрані";
         }
 
         function calculate() {
             const hotel = parseFloat(document.getElementById('hotel').value) || 0;
             const perDiem = parseFloat(document.getElementById('per_diem').value) || 0;
-            const transport = parseFloat(document.getElementById('public_transport').value) || 0;
-            const extra = parseFloat(document.getElementById('extra_costs').value) || 0;
-            
-            // СУМА ФАКТИЧНА = Проживання + Добові + Транспорт + Додаткові + Заправка з Журналу
-            const total = hotel + perDiem + transport + extra + fuelMoneyJournal;
-            const balance = received - total;
+            const transport = parseFloat(document.getElementById('transport').value) || 0;
+            const extra = parseFloat(document.getElementById('extra').value) || 0;
+            const fMoney = parseFloat(document.getElementById('f_money').value) || 0;
+            const rec = parseFloat(document.getElementById('received').value) || 0;
 
-            document.getElementById('actual_total').value = total.toFixed(2);
+            const total = hotel + perDiem + transport + extra + fMoney;
+            const balance = rec - total;
+
+            document.getElementById('actual').value = total.toFixed(2);
             document.getElementById('total_display').innerText = `РАЗОМ ВИТРАТИ: ${total.toFixed(2)} грн`;
             
-            const balanceEl = document.getElementById('balance_display');
-            balanceEl.style.color = balance < 0 ? "#d9534f" : "#2e7d32";
-            balanceEl.innerText = balance < 0 ? `ПЕРЕВИТРАТА: ${Math.abs(balance).toFixed(2)} грн` : `ЗАЛИШОК: ${balance.toFixed(2)} грн`;
-            
-            return { total, balance };
+            const bEl = document.getElementById('balance_display');
+            bEl.style.color = balance < 0 ? "#d9534f" : "#2e7d32";
+            bEl.innerText = balance < 0 ? `ПЕРЕВИТРАТА: ${Math.abs(balance).toFixed(2)} грн` : `ЗАЛИШОК: ${balance.toFixed(2)} грн`;
         }
 
-        function sendData() {
-            const res = calculate();
-            const data = {
-                form_type: 'report',
-                trip_id: params.get('trip_id'),
-                hotel: document.getElementById('hotel').value,
-                per_diem: document.getElementById('per_diem').value,
-                transport: document.getElementById('public_transport').value,
-                extra: document.getElementById('extra_costs').value,
-                comment: document.getElementById('comment').value,
-                actual_total: res.total,
-                balance: res.balance,
-                fuel_journal_sum: fuelMoneyJournal
-            };
-            tg.sendData(JSON.stringify(data));
+        function send() {
+            tg.sendData(JSON.stringify({
+                trip_id: p.get('trip_id'),
+                total: document.getElementById('actual').value,
+                comment: document.getElementById('comment').value
+            }));
             tg.close();
         }
         calculate();
