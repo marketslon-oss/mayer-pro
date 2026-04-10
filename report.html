@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Звіт про відрядження Mayer</title>
+    <title>Звіт Mayer v5.0</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
@@ -27,15 +27,11 @@
         .odo-section { background: #fdf2f2; padding: 10px; border-radius: 8px; border: 1px solid #f5c6cb; margin-bottom: 10px; }
         .fact-km { color: #d9534f; font-weight: bold; text-align: center; font-size: 13px; margin-top: 8px; }
 
+        .upload-hint { background: #e3f2fd; color: #0d47a1; padding: 10px; border-radius: 8px; font-size: 11px; text-align: center; margin: 10px 0; border: 1px solid #bbdefb; }
+
         .finance-section { background: #f0f7ff; padding: 12px; border-radius: 10px; border: 1px solid #cce5ff; margin-top: 15px; }
         .total-box { background: #eef7ee; color: #2e7d32; border: 1px solid #2e7d32; padding: 12px; border-radius: 8px; text-align: center; margin-top: 15px; font-weight: bold; font-size: 18px; }
         .balance-box { font-size: 14px; margin-top: 8px; text-align: center; font-weight: bold; }
-
-        /* Стиль для завантаження фото */
-        .upload-section { margin-top: 15px; padding: 12px; border: 2px dashed #71a95e; border-radius: 10px; background: #f9fff9; text-align: center; }
-        .upload-section input[type="file"] { display: none; }
-        .upload-label { color: #71a95e; font-weight: bold; cursor: pointer; display: block; font-size: 13px; }
-        .file-status { font-size: 11px; color: #666; margin-top: 5px; }
 
         .btn-save { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; cursor: pointer; }
     </style>
@@ -91,10 +87,8 @@
         <label>📝 ПРИМІТКА ДО ВИТРАТ:</label>
         <textarea id="comment" rows="2" placeholder="Деталі додаткових витрат..."></textarea>
 
-        <div class="upload-section">
-            <label for="file_input" class="upload-label">📸 Зробити фото або вибрати файл</label>
-            <input type="file" id="file_input" accept="image/*" multiple onchange="updateFileStatus()">
-            <div id="file_status" class="file-status">Файли не вибрані</div>
+        <div class="upload-hint">
+            📸 Фото чеків та одометра надішліть у чат бота <b>після</b> натискання кнопки "Надіслати звіт".
         </div>
 
         <div class="finance-section">
@@ -128,18 +122,6 @@
         document.getElementById('days').value = params.get('days') || '0';
         document.getElementById('car').value = params.get('car') || '';
         document.getElementById('odo_start').value = params.get('odo_start') || '0';
-
-        function updateFileStatus() {
-            const input = document.getElementById('file_input');
-            const status = document.getElementById('file_status');
-            if (input.files.length > 0) {
-                status.innerText = `Вибрано файлів: ${input.files.length}`;
-                status.style.color = "#2e7d32";
-            } else {
-                status.innerText = "Файли не вибрані";
-                status.style.color = "#666";
-            }
-        }
 
         function calculate() {
             const startKm = parseFloat(document.getElementById('odo_start').value) || 0;
@@ -185,8 +167,7 @@
                 comment: document.getElementById('comment').value,
                 received: received,
                 actual_total: res.total,
-                balance: res.balance,
-                has_files: document.getElementById('file_input').files.length > 0
+                balance: res.balance
             };
             tg.sendData(JSON.stringify(data));
             tg.close();
