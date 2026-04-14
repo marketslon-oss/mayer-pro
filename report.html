@@ -3,184 +3,188 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Звіт Mayer v10.4</title>
+    <title>Mayer Report Final v10.5</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
         
-        /* НОВИЙ ЛОАДЕР */
-        #loading_screen { 
+        /* ЛОАДЕР */
+        #loading_layer { 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            height: 100vh; position: fixed; top: 0; left: 0; width: 100%; background: #f4f4f4; z-index: 10000;
+            height: 100vh; position: fixed; top: 0; left: 0; width: 100%; background: #f4f4f4; z-index: 9999;
         }
-        .loader_circle {
+        .loader_spin {
             width: 45px; height: 45px; border: 5px solid #ddd;
             border-top: 5px solid #71a95e; border-radius: 50%;
-            animation: spin_anim 0.8s linear infinite; margin-bottom: 15px;
+            animation: spin_f 0.8s linear infinite; margin-bottom: 15px;
         }
-        @keyframes spin_anim { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes spin_f { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        .form_card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: none; }
+        .report_card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: none; }
         
         .user-header { background: #f1f1f1; padding: 10px; border-radius: 10px; margin-bottom: 10px; font-size: 13px; border-left: 5px solid #71a95e; }
         .row { display: flex; gap: 10px; align-items: flex-end; margin-bottom: 10px; }
         .row > div { flex: 1; display: flex; flex-direction: column; }
         label { display: block; font-weight: bold; font-size: 9px; color: #555; text-transform: uppercase; margin-bottom: 4px; }
         input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
-        .gray_input { background: #f9f9f9; color: #444; font-weight: bold; border: 1px dashed #bbb; }
+        .gray_box { background: #f9f9f9; color: #444; font-weight: bold; border: 1px dashed #bbb; }
         
-        .odo-box { background: #fdf2f2; padding: 10px; border-radius: 8px; border: 1px solid #f5c6cb; margin-bottom: 10px; }
+        .odo_frame { background: #fdf2f2; padding: 10px; border-radius: 8px; border: 1px solid #f5c6cb; margin-bottom: 10px; }
         
-        /* НОВА РАМКА ЗАЛИШКУ (в один рядок) */
-        .balance_frame { 
-            background: #eef7ee; padding: 12px; border-radius: 8px; border: 1px solid #c3e6cb; margin-bottom: 10px;
+        /* БЛОК ОТРИМАНО ТА ЗАЛИШОК В ОДИН РЯДОК */
+        .balance_container { 
+            background: #eef7ee; padding: 12px; border-radius: 10px; border: 1px solid #c3e6cb; margin-bottom: 15px;
             display: flex; justify-content: space-between; align-items: center;
         }
-        .balance_item { flex: 1; text-align: center; }
-        .balance_divider { width: 1px; height: 30px; background: #c3e6cb; margin: 0 10px; }
+        .bal_part { flex: 1; text-align: center; }
+        .bal_divider { width: 1px; height: 35px; background: #c3e6cb; margin: 0 5px; }
+        .bal_val { font-size: 18px; font-weight: bold; margin-top: 2px; }
 
-        .total-box { background: #eef7ee; color: #2e7d32; border: 1px solid #2e7d32; padding: 12px; border-radius: 8px; text-align: center; margin-top: 10px; font-weight: bold; font-size: 18px; }
-        .btn-file { background: #5d8aa8; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 11px; font-weight: bold; width: 100%; cursor: pointer; }
-        .btn-submit { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; }
+        .total_summary { background: #eef7ee; color: #2e7d32; border: 1px solid #2e7d32; padding: 12px; border-radius: 8px; text-align: center; margin-top: 10px; font-weight: bold; font-size: 18px; }
+        .btn_action { background: #5d8aa8; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 11px; font-weight: bold; width: 100%; cursor: pointer; }
+        .btn_submit { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; }
     </style>
 </head>
 <body>
 
-    <div id="loading_screen">
-        <div class="loader_circle"></div>
-        <div style="color: #666; font-size: 14px;">Завантаження...</div>
+    <div id="loading_layer">
+        <div class="loader_spin"></div>
+        <div style="color: #666; font-size: 14px;">Отримання даних...</div>
     </div>
 
-    <div class="form_card" id="main_content">
+    <div class="report_card" id="form_content">
         <div class="user-header">
-            <b>ПІБ:</b> <span id="txt_pib">...</span><br>
-            <b>Посада:</b> <span id="txt_pos">...</span> | <b>Відділ:</b> <span id="txt_vid">...</span><br>
-            <b>№ Поїздки:</b> <span id="txt_trip" style="color:#d9534f; font-weight: bold;">...</span>
+            <b>ПІБ:</b> <span id="view_pib">...</span><br>
+            <b>Посада:</b> <span id="view_pos">...</span> | <b>Відділ:</b> <span id="view_vid">...</span><br>
+            <b>№ Поїздки:</b> <span id="view_trip" style="color:#d9534f; font-weight: bold;">...</span>
         </div>
 
         <div style="margin-bottom:10px;">
             <label>🎯 МЕТА ВІДРЯДЖЕННЯ</label>
-            <input type="text" id="inp_purpose" class="gray_input" readonly>
+            <input type="text" id="in_purpose" class="gray_box" readonly>
         </div>
         <div style="margin-bottom:10px;">
             <label>📍 МАРШРУТ</label>
-            <input type="text" id="inp_dest" class="gray_input" readonly>
+            <input type="text" id="in_dest" class="gray_box" readonly>
         </div>
 
         <div class="row">
-            <div><label>📅 ВИЇЗД</label><input type="text" id="inp_start" class="gray_input" readonly></div>
-            <div><label>📅 ПРИБУТТЯ</label><input type="text" id="inp_end" class="gray_input" readonly></div>
-            <div style="flex:0.4;"><label>🔢 ДІБ</label><input type="text" id="inp_days" class="gray_input" readonly></div>
+            <div><label>📅 ВИЇЗД</label><input type="text" id="in_start" class="gray_box" readonly></div>
+            <div><label>📅 ПРИБУТТЯ</label><input type="text" id="in_end" class="gray_box" readonly></div>
+            <div style="flex:0.4;"><label>🔢 ДІБ</label><input type="text" id="in_days" class="gray_box" readonly></div>
         </div>
 
-        <div class="odo-box">
+        <div class="odo_frame">
             <div class="row" style="margin-bottom:5px;">
-                <div><label>📟 ОДО ВИЇЗД</label><input type="text" id="inp_os" class="gray_input" readonly></div>
-                <div><label>🏁 ОДО ПРИБУТТЯ</label><input type="text" id="inp_oe" class="gray_input" readonly></div>
+                <div><label>📟 ОДО ВИЇЗД</label><input type="text" id="in_os" class="gray_box" readonly></div>
+                <div><label>🏁 ОДО ПРИБУТТЯ</label><input type="text" id="in_oe" class="gray_box" readonly></div>
             </div>
             <div style="text-align:center; font-size:11px; font-weight:bold; color:#d9534f;">
-                ПРОБІГ: <span id="val_km">0</span> КМ | ⛽ ПАЛИВО: <span id="val_fl">0</span> Л
+                ПРОБІГ: <span id="text_km">0</span> КМ | ⛽ ПАЛИВО: <span id="text_fl">0</span> Л
             </div>
         </div>
 
         <div class="row">
-            <div><label>🏨 ПРОЖИВАННЯ</label><input type="number" id="inp_hotel" placeholder="0" oninput="runCalc()"></div>
-            <div><label>🍔 ДОБОВІ</label><input type="number" id="inp_diem" placeholder="0" oninput="runCalc()"></div>
+            <div><label>🏨 ПРОЖИВАННЯ</label><input type="number" id="in_hotel" placeholder="0" oninput="doCalc()"></div>
+            <div><label>🍔 ДОБОВІ</label><input type="number" id="in_diem" placeholder="0" oninput="doCalc()"></div>
         </div>
 
         <div class="row">
-            <div><label>🚌 ГРОМАДСЬКИЙ ТРАНСПОРТ</label><input type="number" id="inp_trans" placeholder="0" oninput="runCalc()"></div>
-            <div><label>🛠️ ДОДАТКОВІ ВИТРАТИ</label><input type="number" id="inp_extra" placeholder="0" oninput="calc()"></div>
+            <div><label>🚌 ГРОМАДСЬКИЙ ТРАНСПОРТ</label><input type="number" id="in_trans" placeholder="0" oninput="doCalc()"></div>
+            <div><label>🛠️ ДОДАТКОВІ ВИТРАТИ</label><input type="number" id="in_extra" placeholder="0" oninput="doCalc()"></div>
         </div>
 
         <div style="margin-bottom:15px;">
             <label>📝 ОПИШІТЬ ВИТРАТИ (ПРИМІТКА)</label>
-            <input type="text" id="inp_comm" placeholder="Деталі витрат...">
+            <input type="text" id="in_comm" placeholder="Деталі витрат...">
         </div>
 
-        <div class="balance_frame">
-            <div class="balance_item">
+        <div class="balance_container">
+            <div class="bal_part">
                 <label>💰 ОТРИМАНО</label>
-                <input type="text" id="inp_rec" class="gray_input" readonly style="text-align: center; border: none; background: transparent;">
+                <div id="val_rec" class="bal_val" style="color: #444;">0</div>
             </div>
-            <div class="balance_divider"></div>
-            <div class="balance_item">
+            <div class="bal_divider"></div>
+            <div class="bal_part">
                 <label>⚖️ ЗАЛИШОК</label>
-                <div id="txt_bal" style="font-weight: bold; font-size: 18px; color: #2e7d32;">0</div>
+                <div id="val_bal" class="bal_val" style="color: #2e7d32;">0</div>
             </div>
         </div>
 
-        <div class="total-box" id="display_total">РАЗОМ ВИТРАТИ: 0 грн</div>
+        <div class="total_summary" id="total_out">РАЗОМ ВИТРАТИ: 0 грн</div>
 
         <div class="row" style="margin-top:15px;">
-            <div><button type="button" class="btn-file" onclick="document.getElementById('f1').click()">📁 ФАЙЛ</button><input type="file" id="f1" style="display:none"></div>
-            <div><button type="button" class="btn-file" onclick="document.getElementById('f2').click()">📷 ФОТО</button><input type="file" id="f2" accept="image/*" capture="camera" style="display:none"></div>
+            <div><button type="button" class="btn_action" onclick="document.getElementById('file1').click()">📁 ФАЙЛ</button><input type="file" id="file1" style="display:none"></div>
+            <div><button type="button" class="btn_action" onclick="document.getElementById('file2').click()">📷 ФОТО</button><input type="file" id="file2" accept="image/*" capture="camera" style="display:none"></div>
         </div>
 
-        <button class="btn-submit" onclick="finalSend()">💾 Надіслати звіт</button>
+        <button class="btn_submit" onclick="sendReport()">💾 Надіслати звіт</button>
     </div>
 
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
-        const urlP = new URLSearchParams(window.location.search);
+        const params = new URLSearchParams(window.location.search);
 
-        function clean(v) { return (!v || v === "0" || v === "null") ? "" : v; }
+        function cleanVal(v) { return (!v || v === "0" || v === "null") ? "" : v; }
 
         window.addEventListener('load', () => {
-            document.getElementById('txt_pib').innerText = urlP.get('pib') || '---';
-            document.getElementById('txt_pos').innerText = urlP.get('posada') || '---';
-            document.getElementById('txt_vid').innerText = urlP.get('viddil') || '---';
-            document.getElementById('txt_trip').innerText = urlP.get('trip_id') || '---';
+            document.getElementById('view_pib').innerText = params.get('pib') || '---';
+            document.getElementById('view_pos').innerText = params.get('posada') || '---';
+            document.getElementById('view_vid').innerText = params.get('viddil') || '---';
+            document.getElementById('view_trip').innerText = params.get('trip_id') || '---';
             
-            document.getElementById('inp_purpose').value = urlP.get('purpose') || '';
-            document.getElementById('inp_dest').value = urlP.get('dest') || '';
-            document.getElementById('inp_start').value = urlP.get('start') || '';
-            document.getElementById('inp_end').value = urlP.get('end') || '';
-            document.getElementById('inp_days').value = clean(urlP.get('days'));
-            document.getElementById('inp_rec').value = clean(urlP.get('money_received'));
-            document.getElementById('inp_os').value = clean(urlP.get('o_start'));
-            document.getElementById('inp_oe').value = clean(urlP.get('o_end'));
+            document.getElementById('in_purpose').value = params.get('purpose') || '';
+            document.getElementById('in_dest').value = params.get('dest') || '';
+            document.getElementById('in_start').value = params.get('start') || '';
+            document.getElementById('in_end').value = params.get('end') || '';
+            document.getElementById('in_days').value = cleanVal(params.get('days'));
             
-            let os_val = parseFloat(urlP.get('o_start')) || 0;
-            let oe_val = parseFloat(urlP.get('o_end')) || 0;
-            document.getElementById('val_km').innerText = (oe_val - os_val) > 0 ? (oe_val - os_val).toFixed(0) : "0";
-            document.getElementById('val_fl').innerText = clean(urlP.get('f_liters')) || "0";
+            let rec_val = params.get('money_received') || "0";
+            document.getElementById('val_rec').innerText = rec_val;
+            
+            document.getElementById('in_os').value = cleanVal(params.get('o_start'));
+            document.getElementById('in_oe').value = cleanVal(params.get('o_end'));
+            
+            let o_s = parseFloat(params.get('o_start')) || 0;
+            let o_e = parseFloat(params.get('o_end')) || 0;
+            document.getElementById('text_km').innerText = (o_e - o_s) > 0 ? (o_e - o_s).toFixed(0) : "0";
+            document.getElementById('text_fl').innerText = cleanVal(params.get('f_liters')) || "0";
 
-            runCalc();
+            doCalc();
 
             setTimeout(() => {
-                document.getElementById('loading_screen').style.display = 'none';
-                document.getElementById('main_content').style.display = 'block';
+                document.getElementById('loading_layer').style.display = 'none';
+                document.getElementById('form_content').style.display = 'block';
             }, 600);
         });
 
-        function runCalc() {
-            const h = parseFloat(document.getElementById('inp_hotel').value) || 0;
-            const d = parseFloat(document.getElementById('inp_diem').value) || 0;
-            const t = parseFloat(document.getElementById('inp_trans').value) || 0;
-            const e = parseFloat(document.getElementById('inp_extra').value) || 0;
-            const r = parseFloat(document.getElementById('inp_rec').value.replace(/\s/g, '')) || 0;
+        function doCalc() {
+            const h = parseFloat(document.getElementById('in_hotel').value) || 0;
+            const d = parseFloat(document.getElementById('in_diem').value) || 0;
+            const t = parseFloat(document.getElementById('in_trans').value) || 0;
+            const e = parseFloat(document.getElementById('in_extra').value) || 0;
+            const r = parseFloat(document.getElementById('val_rec').innerText) || 0;
 
-            const total = h + d + t + e;
-            const bal = r - total;
+            const spent = h + d + t + e;
+            const remain = r - spent;
 
-            document.getElementById('display_total').innerText = `РАЗОМ ВИТРАТИ: ${total.toFixed(0)} грн`;
-            const bEl = document.getElementById('txt_bal');
-            bEl.style.color = bal < 0 ? "#d9534f" : "#2e7d32";
-            bEl.innerText = bal < 0 ? `-${Math.abs(bal).toFixed(0)}` : `${bal.toFixed(0)}`;
+            document.getElementById('total_out').innerText = `РАЗОМ ВИТРАТИ: ${spent.toFixed(0)} грн`;
+            const balEl = document.getElementById('val_bal');
+            balEl.style.color = remain < 0 ? "#d9534f" : "#2e7d32";
+            balEl.innerText = remain < 0 ? `-${Math.abs(remain).toFixed(0)}` : `${remain.toFixed(0)}`;
         }
 
-        function finalSend() {
+        function sendReport() {
             tg.sendData(JSON.stringify({
                 type: "report_update",
-                trip_id: urlP.get('trip_id'),
-                hotel: document.getElementById('inp_hotel').value || "0",
-                diem: document.getElementById('inp_diem').value || "0",
-                trans: document.getElementById('inp_trans').value || "0",
-                extra: document.getElementById('inp_extra').value || "0",
-                comment: document.getElementById('inp_comm').value || "",
-                total: document.getElementById('display_total').innerText.replace(/\D/g, '')
+                trip_id: params.get('trip_id'),
+                hotel: document.getElementById('in_hotel').value || "0",
+                diem: document.getElementById('in_diem').value || "0",
+                trans: document.getElementById('in_trans').value || "0",
+                extra: document.getElementById('in_extra').value || "0",
+                comment: document.getElementById('in_comm').value || "",
+                total: document.getElementById('total_out').innerText.replace(/\D/g, '')
             }));
             tg.close();
         }
