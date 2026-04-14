@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mayer Report v11.0</title>
+    <title>Mayer Report v11.1</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
@@ -18,7 +18,6 @@
         input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
         .gray_box { background: #f9f9f9; color: #444; font-weight: bold; border: 1px dashed #bbb; }
         
-        /* СТИЛІ БЛОКІВ */
         .section_frame { padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #ddd; }
         .odo_bg { background: #fdf2f2; border-color: #f5c6cb; }
         .fuel_bg { background: #fffde7; border-color: #fff59d; }
@@ -29,7 +28,6 @@
         .bal_val { font-size: 18px; font-weight: bold; margin-top: 2px; }
         .total_summary { background: #eef7ee; color: #2e7d32; border: 1px solid #2e7d32; padding: 12px; border-radius: 8px; text-align: center; margin-top: 10px; font-weight: bold; font-size: 18px; }
         
-        /* КНОПКИ */
         .btn_up { background: #5d8aa8; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 11px; font-weight: bold; width: 100%; cursor: pointer; text-align: center; }
         .btn_submit { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; }
     </style>
@@ -46,12 +44,8 @@
             <b>№ Поїздки:</b> <span id="view_trip" style="color:#d9534f; font-weight: bold;">...</span>
         </div>
 
-        <div class="row">
-            <div><label>🎯 МЕТА</label><input type="text" id="in_purpose" class="gray_box" readonly></div>
-        </div>
-        <div class="row">
-            <div><label>📍 МАРШРУТ</label><input type="text" id="in_dest" class="gray_box" readonly></div>
-        </div>
+        <div class="row"><div><label>🎯 МЕТА</label><input type="text" id="in_purpose" class="gray_box" readonly></div></div>
+        <div class="row"><div><label>📍 МАРШРУТ</label><input type="text" id="in_dest" class="gray_box" readonly></div></div>
 
         <div class="row">
             <div><label>📅 ВИЇЗД</label><input type="text" id="in_start" class="gray_box" readonly></div>
@@ -77,13 +71,17 @@
             </div>
             <div class="row" style="margin-top:5px;">
                 <div><label>⛽ ПЛАН ПАЛИВА (Л)</label><input type="text" id="in_plan_fuel" class="gray_box" readonly></div>
-                <div><label>⛽ ЗАПРАВЛЕНО (ФАКТ Л)</label><input type="text" id="in_fact_fuel" class="gray_box" readonly style="color: #d9534f;"></div>
+                <div><label>⛽ ЗАПРАВЛЕНО (ФАКТ)</label><input type="text" id="in_fact_fuel" class="gray_box" readonly style="color: #d9534f;"></div>
             </div>
         </div>
 
         <div class="row">
             <div><label>🏨 ПРОЖИВАННЯ</label><input type="number" id="in_hotel" oninput="doCalc()"></div>
             <div><label>🍔 ДОБОВІ</label><input type="number" id="in_diem" oninput="doCalc()"></div>
+        </div>
+        <div class="row">
+            <div><label>🚌 ТРАНСПОРТ (ГРОМ.)</label><input type="number" id="in_trans" oninput="doCalc()"></div>
+            <div><label>🛠️ ДОДАТКОВІ ВИТРАТИ</label><input type="number" id="in_extra" oninput="doCalc()"></div>
         </div>
 
         <div style="margin-bottom:10px;">
@@ -121,20 +119,16 @@
             document.getElementById('in_start').value = p.get('start') || '';
             document.getElementById('in_end').value = p.get('end') || '';
             document.getElementById('in_days').value = fix(p.get('days'));
-            
-            // План
             document.getElementById('in_plan_km').value = fix(p.get('plan_km'));
             document.getElementById('in_plan_fuel').value = fix(p.get('plan_fuel'));
             document.getElementById('in_hotel').value = fix(p.get('plan_hotel'));
             document.getElementById('in_diem').value = fix(p.get('plan_diem'));
-            
-            // Факт (Одометр та заправки)
             document.getElementById('in_os').value = fix(p.get('o_start'));
             document.getElementById('in_oe').value = fix(p.get('o_end'));
+            
             let km = (parseFloat(p.get('o_end')) || 0) - (parseFloat(p.get('o_start')) || 0);
             document.getElementById('in_fact_km').value = km > 0 ? km.toFixed(0) : "0";
             document.getElementById('in_fact_fuel').value = fix(p.get('f_liters')) || "0";
-            
             document.getElementById('val_rec').innerText = p.get('money_received') || "0";
             
             doCalc();
@@ -145,8 +139,11 @@
         function doCalc() {
             const h = parseFloat(document.getElementById('in_hotel').value) || 0;
             const d = parseFloat(document.getElementById('in_diem').value) || 0;
+            const t = parseFloat(document.getElementById('in_trans').value) || 0;
+            const e = parseFloat(document.getElementById('in_extra').value) || 0;
             const r = parseFloat(document.getElementById('val_rec').innerText) || 0;
-            const spent = h + d;
+            
+            const spent = h + d + t + e;
             document.getElementById('total_out').innerText = `РАЗОМ ВИТРАТИ: ${spent.toFixed(0)} грн`;
             const bal = r - spent;
             const balEl = document.getElementById('val_bal');
@@ -160,6 +157,8 @@
                 trip_id: p.get('trip_id'),
                 hotel: document.getElementById('in_hotel').value || "0",
                 diem: document.getElementById('in_diem').value || "0",
+                trans: document.getElementById('in_trans').value || "0",
+                extra: document.getElementById('in_extra').value || "0",
                 fuel_start: document.getElementById('fuel_start').value || "0",
                 fuel_end: document.getElementById('fuel_end').value || "0",
                 comment: document.getElementById('in_comm').value || "",
