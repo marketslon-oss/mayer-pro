@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mayer Report v11.4</title>
+    <title>Mayer Report v11.5</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
@@ -11,19 +11,26 @@
         .loader_spin { width: 45px; height: 45px; border: 5px solid #ddd; border-top: 5px solid #71a95e; border-radius: 50%; animation: spin_f 0.8s linear infinite; margin-bottom: 15px; }
         @keyframes spin_f { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .report_card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: none; }
+        
+        /* ВІДНОВЛЕНА СТРУКТУРА ЗАГОЛОВКА */
         .user-header { background: #f1f1f1; padding: 10px; border-radius: 10px; margin-bottom: 10px; font-size: 12px; border-left: 5px solid #71a95e; }
+        
         .row { display: flex; gap: 8px; align-items: flex-end; margin-bottom: 10px; }
         .row > div { flex: 1; display: flex; flex-direction: column; }
         label { display: block; font-weight: bold; font-size: 9px; color: #555; text-transform: uppercase; margin-bottom: 4px; }
         input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
         .gray_box { background: #f9f9f9; color: #444; font-weight: bold; border: 1px dashed #bbb; }
+        
         .section_frame { padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #ddd; }
         .odo_bg { background: #fdf2f2; border-color: #f5c6cb; }
         .fuel_bg { background: #fffde7; border-color: #fff59d; }
+
         .balance_container { background: #eef7ee; padding: 12px; border-radius: 10px; border: 1px solid #c3e6cb; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
         .bal_part { flex: 1; text-align: center; }
+        .bal_divider { width: 1px; height: 35px; background: #c3e6cb; margin: 0 5px; }
         .bal_val { font-size: 18px; font-weight: bold; margin-top: 2px; }
         .total_summary { background: #eef7ee; color: #2e7d32; border: 1px solid #2e7d32; padding: 12px; border-radius: 8px; text-align: center; margin-top: 10px; font-weight: bold; font-size: 18px; }
+        
         .btn_up { background: #5d8aa8; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 11px; font-weight: bold; width: 100%; cursor: pointer; text-align: center; }
         .btn_submit { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; }
     </style>
@@ -34,6 +41,7 @@
     <div class="report_card" id="form_content">
         <div class="user-header">
             <b>ПІБ:</b> <span id="view_pib">...</span><br>
+            <b>Посада:</b> <span id="view_pos">...</span> | <b>Відділ:</b> <span id="view_vid">...</span><br>
             <b>№ Поїздки:</b> <span id="view_trip" style="color:#d9534f; font-weight: bold;">...</span>
         </div>
 
@@ -101,8 +109,12 @@
         function fix(v) { return (!v || v === "0" || v === "null") ? "" : v; }
 
         window.onload = () => {
+            // ВІДНОВЛЕНЕ ЗАПОВНЕННЯ ШАПКИ
             document.getElementById('view_pib').innerText = p.get('pib') || '---';
+            document.getElementById('view_pos').innerText = p.get('posada') || '---';
+            document.getElementById('view_vid').innerText = p.get('viddil') || '---';
             document.getElementById('view_trip').innerText = p.get('trip_id') || '---';
+            
             document.getElementById('in_purpose').value = p.get('purpose') || '';
             document.getElementById('in_dest').value = p.get('dest') || '';
             document.getElementById('in_start').value = p.get('start') || '';
@@ -113,7 +125,6 @@
             
             document.getElementById('in_hotel').value = fix(p.get('plan_hotel'));
             document.getElementById('in_diem').value = fix(p.get('plan_diem'));
-            // Транспорт та Додаткові залишаємо пустими для ручного вводу
             
             document.getElementById('in_os').value = fix(p.get('o_start'));
             document.getElementById('in_oe').value = fix(p.get('o_end'));
