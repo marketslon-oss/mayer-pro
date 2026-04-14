@@ -81,8 +81,9 @@
         tg.expand();
         const p = new URLSearchParams(window.location.search);
 
+        // Функція для видалення нулів при завантаженні
         function fixZero(val) {
-            return (!val || val === "0" || val === "null") ? "" : val;
+            return (!val || val === "0" || val === "0.0" || val === "null") ? "" : val;
         }
 
         document.getElementById('pib').innerText = p.get('pib') || '---';
@@ -133,7 +134,7 @@
                 trans: document.getElementById('trans').value || "0",
                 extra: document.getElementById('extra').value || "0",
                 comment: document.getElementById('comm').value || "",
-                total: document.getElementById('total_display').innerText.replace(/\D/g, '')
+                total_spent: document.getElementById('total_display').innerText.replace(/\D/g, '')
             };
             tg.sendData(JSON.stringify(data));
             tg.close();
