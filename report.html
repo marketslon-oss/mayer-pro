@@ -3,24 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Звіт Mayer v10.2</title>
+    <title>Звіт Mayer v10.3</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
-        .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: none; }
         
-        /* ЛОАДЕР */
+        /* ЛОАДЕР — показується відразу при завантаженні */
         #loader { 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            height: 100vh; color: #71a95e; font-weight: bold; 
+            height: 100vh; position: fixed; top: 0; left: 0; width: 100%; background: #f4f4f4; z-index: 9999;
         }
         .spinner {
-            width: 40px; height: 40px; border: 4px solid #f3f3f3;
-            border-top: 4px solid #71a95e; border-radius: 50%;
-            animation: spin 1s linear infinite; margin-bottom: 10px;
+            width: 50px; height: 50px; border: 5px solid #ccc;
+            border-top: 5px solid #71a95e; border-radius: 50%;
+            animation: spin 1s linear infinite; margin-bottom: 15px;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
+        /* КАРТКА — прихована, поки йде завантаження */
+        .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: none; }
+        
         .user-header { background: #f1f1f1; padding: 10px; border-radius: 10px; margin-bottom: 10px; font-size: 13px; border-left: 5px solid #71a95e; }
         .row { display: flex; gap: 10px; align-items: flex-end; margin-bottom: 10px; }
         .row > div { flex: 1; display: flex; flex-direction: column; }
@@ -28,12 +30,13 @@
         input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
         .gray { background: #f9f9f9; color: #444; font-weight: bold; border: 1px dashed #bbb; }
         
-        /* РАМКИ (Одометр та Залишок) */
-        .odo-box, .bal-box { background: #fdf2f2; padding: 10px; border-radius: 8px; border: 1px solid #f5c6cb; margin-bottom: 10px; }
-        .bal-box { background: #eef7ee; border-color: #c3e6cb; }
+        .odo-box { background: #fdf2f2; padding: 10px; border-radius: 8px; border: 1px solid #f5c6cb; margin-bottom: 10px; }
+        
+        /* РАМКА ЗАЛИШКУ */
+        .bal-box { background: #eef7ee; padding: 10px; border-radius: 8px; border: 1px solid #c3e6cb; margin-bottom: 10px; }
 
         .total-box { background: #eef7ee; color: #2e7d32; border: 1px solid #2e7d32; padding: 12px; border-radius: 8px; text-align: center; margin-top: 10px; font-weight: bold; font-size: 18px; }
-        .btn-up { background: #5d8aa8; color: white; border: none; padding: 10px; border-radius: 5px; font-size: 11px; font-weight: bold; width: 100%; cursor: pointer; }
+        .btn-up { background: #5d8aa8; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 11px; font-weight: bold; width: 100%; cursor: pointer; }
         .btn-save { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; }
     </style>
 </head>
@@ -41,14 +44,14 @@
 
     <div id="loader">
         <div class="spinner"></div>
-        <span>Завантаження даних...</span>
+        <div style="color: #555;">Отримуємо дані з таблиці...</div>
     </div>
 
     <div class="card" id="main_card">
         <div class="user-header">
             <b>ПІБ:</b> <span id="pib_txt">...</span><br>
             <b>Посада:</b> <span id="pos_txt">...</span> | <b>Відділ:</b> <span id="vid_txt">...</span><br>
-            <b>№ Поїздки:</b> <span id="trip_id_txt" style="color:#d9534f;">...</span>
+            <b>№ Поїздки:</b> <span id="trip_id_txt" style="color:#d9534f; font-weight: bold;">...</span>
         </div>
 
         <div style="margin-bottom:10px;">
@@ -68,11 +71,11 @@
 
         <div class="odo-box">
             <div class="row" style="margin-bottom:5px;">
-                <div><label>📟 ОДО ВИЇЗД</label><input type="number" id="o_start" class="gray" readonly></div>
-                <div><label>🏁 ОДО ПРИБУТТЯ</label><input type="number" id="o_end" class="gray" readonly></div>
+                <div><label>📟 ОДО ВИЇЗД</label><input type="text" id="o_start" class="gray" readonly></div>
+                <div><label>🏁 ОДО ПРИБУТТЯ</label><input type="text" id="o_end" class="gray" readonly></div>
             </div>
             <div style="text-align:center; font-size:11px; font-weight:bold; color:#d9534f;">
-                ПРОБІГ ЗА ЖУРНАЛОМ: <span id="km_val"></span> КМ | ⛽ ПАЛИВО: <span id="fl_val"></span> Л
+                ПРОБІГ ЗА ЖУРНАЛОМ: <span id="km_val">0</span> КМ | ⛽ ПАЛИВО: <span id="fl_val">0</span> Л
             </div>
         </div>
 
@@ -86,17 +89,17 @@
             <div><label>🛠️ ДОДАТКОВІ ВИТРАТИ</label><input type="number" id="extra" placeholder="0" oninput="calc()"></div>
         </div>
 
-        <div style="margin-bottom:10px;">
+        <div style="margin-bottom:15px;">
             <label>📝 ОПИШІТЬ ВИТРАТИ (ПРИМІТКА)</label>
             <input type="text" id="comm" placeholder="Деталі витрат...">
         </div>
 
         <div class="bal-box">
             <div class="row" style="margin-bottom:0;">
-                <div><label>💰 ОТРИМАНО</label><input type="number" id="received" class="gray" readonly></div>
+                <div><label>💰 ОТРИМАНО</label><input type="text" id="received" class="gray" readonly></div>
                 <div style="text-align: center;">
                     <label>⚖️ ЗАЛИШОК</label>
-                    <div id="bal_txt" style="font-weight: bold; font-size: 18px; padding-top: 5px;">0</div>
+                    <div id="bal_txt" style="font-weight: bold; font-size: 20px; padding-top: 5px; color: #2e7d32;">0</div>
                 </div>
             </div>
         </div>
@@ -118,7 +121,8 @@
 
         function fix(v) { return (!v || v === "0" || v === "null") ? "" : v; }
 
-        window.onload = function() {
+        // ЗАВАНТАЖЕННЯ ДАНИХ
+        window.addEventListener('DOMContentLoaded', () => {
             document.getElementById('pib_txt').innerText = p.get('pib') || '---';
             document.getElementById('pos_txt').innerText = p.get('posada') || '---';
             document.getElementById('vid_txt').innerText = p.get('viddil') || '---';
@@ -133,14 +137,20 @@
             document.getElementById('o_start').value = fix(p.get('o_start'));
             document.getElementById('o_end').value = fix(p.get('o_end'));
             
-            let km = (parseFloat(p.get('o_end')) || 0) - (parseFloat(p.get('o_start')) || 0);
-            document.getElementById('km_val').innerText = km > 0 ? km.toFixed(0) : "";
-            document.getElementById('fl_val').innerText = fix(p.get('f_liters'));
+            let os = parseFloat(p.get('o_start')) || 0;
+            let oe = parseFloat(p.get('o_end')) || 0;
+            let km = oe - os;
+            document.getElementById('km_val').innerText = km > 0 ? km.toFixed(0) : "0";
+            document.getElementById('fl_val').innerText = fix(p.get('f_liters')) || "0";
 
             calc();
-            document.getElementById('loader').style.display = 'none';
-            document.getElementById('main_card').style.display = 'block';
-        };
+
+            // ПРИБИРАЄМО ЛОАДЕР ТА ПОКАЗУЄМО ФОРМУ
+            setTimeout(() => {
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('main_card').style.display = 'block';
+            }, 500); 
+        });
 
         function calc() {
             const h = parseFloat(document.getElementById('hotel').value) || 0;
