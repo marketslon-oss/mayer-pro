@@ -39,22 +39,22 @@
                 <div><label>🏁 ОДО ПРИБУТТЯ</label><input type="number" id="o_end" class="gray" readonly></div>
             </div>
             <div style="text-align:center; font-size:11px; font-weight:bold; color:#d9534f;">
-                ПРОБІГ ЗА ЖУРНАЛОМ: <span id="km_txt">0</span> КМ | ⛽ ПАЛИВО: <span id="fl_txt">0</span> Л
+                ПРОБІГ ЗА ЖУРНАЛОМ: <span id="km_txt"></span> КМ | ⛽ ПАЛИВО: <span id="fl_txt"></span> Л
             </div>
         </div>
 
         <div class="row">
-            <div><label>🏨 ПРОЖИВАННЯ</label><input type="number" id="hotel" value="0" oninput="calc()"></div>
-            <div><label>🍔 ДОБОВІ</label><input type="number" id="diem" value="0" oninput="calc()"></div>
+            <div><label>🏨 ПРОЖИВАННЯ</label><input type="number" id="hotel" placeholder="" oninput="calc()"></div>
+            <div><label>🍔 ДОБОВІ</label><input type="number" id="diem" placeholder="" oninput="calc()"></div>
         </div>
 
         <div class="row">
-            <div><label>🚌 ТРАНСПОРТ</label><input type="number" id="trans" value="0" oninput="calc()"></div>
-            <div><label>🛠️ ДОДАТКОВІ</label><input type="number" id="extra" value="0" oninput="calc()"></div>
+            <div><label>🚌 ТРАНСПОРТ</label><input type="number" id="trans" placeholder="" oninput="calc()"></div>
+            <div><label>🛠️ ДОДАТКОВІ</label><input type="number" id="extra" placeholder="" oninput="calc()"></div>
         </div>
 
         <div class="row">
-            <div style="flex:1.5;"><label>📝 ПРИМІТКА</label><input type="text" id="comm" placeholder="Деталі..."></div>
+            <div style="flex:1.5;"><label>📝 ПРИМІТКА</label><input type="text" id="comm" placeholder="Кропивницький-Київ-Кропивницький"></div>
             <div><label>⛽ ЗАПРАВКА (ГРН)</label><input type="number" id="f_money" class="gray" readonly></div>
         </div>
 
@@ -62,7 +62,7 @@
             <div><label>💰 ОТРИМАНО</label><input type="number" id="received" class="gray" readonly style="text-align: center;"></div>
             <div id="bal_container" style="text-align: center;">
                 <label>⚖️ ЗАЛИШОК / ПЕРЕВИТРАТА</label>
-                <div id="bal_txt" style="font-weight: bold; font-size: 14px; padding-top: 8px;">0 грн</div>
+                <div id="bal_txt" style="font-weight: bold; font-size: 14px; padding-top: 8px;"></div>
             </div>
         </div>
 
@@ -81,24 +81,35 @@
         tg.expand();
         const p = new URLSearchParams(window.location.search);
 
-        // Наповнення даними з URL
+        // Функція для перевірки на 0 або порожньо
+        function clean(val) {
+            return (val && val !== "0" && val !== "null") ? val : "";
+        }
+
+        // Наповнення даними
         document.getElementById('pib').innerText = p.get('pib') || '---';
         document.getElementById('pos').innerText = p.get('posada') || '---';
         document.getElementById('vid').innerText = p.get('viddil') || '---';
         document.getElementById('start').value = p.get('start') || '';
         document.getElementById('end').value = p.get('end') || '';
-        document.getElementById('days').value = p.get('days') || '1';
         
-        const rec = parseFloat(p.get('money_received')) || 0;
-        document.getElementById('received').value = rec;
+        // Прибираємо "1" у діб, якщо немає даних
+        let d = p.get('days');
+        document.getElementById('days').value = (d && d !== "1" && d !== "0") ? d : "";
+
+        document.getElementById('received').value = clean(p.get('money_received'));
 
         const os = parseFloat(p.get('o_start')) || 0;
         const oe = parseFloat(p.get('o_end')) || 0;
-        document.getElementById('o_start').value = os;
-        document.getElementById('o_end').value = oe;
-        document.getElementById('km_txt').innerText = (oe - os).toFixed(0);
-        document.getElementById('fl_txt').innerText = p.get('f_liters') || '0';
-        document.getElementById('f_money').value = p.get('f_money') || '0';
+        document.getElementById('o_start').value = clean(p.get('o_start'));
+        document.getElementById('o_end').value = clean(p.get('o_end'));
+        
+        let km = oe - os;
+        document.getElementById('km_txt').innerText = km > 0 ? km.toFixed(0) : "";
+        
+        let fl = p.get('f_liters');
+        document.getElementById('fl_txt').innerText = clean(fl);
+        document.getElementById('f_money').value = clean(p.get('f_money'));
 
         function calc() {
             const h = parseFloat(document.getElementById('hotel').value) || 0;
@@ -106,14 +117,20 @@
             const t = parseFloat(document.getElementById('trans').value) || 0;
             const e = parseFloat(document.getElementById('extra').value) || 0;
             const fm = parseFloat(document.getElementById('f_money').value) || 0;
+            const rec = parseFloat(document.getElementById('received').value) || 0;
 
             const total = h + d + t + e + fm;
             const bal = rec - total;
 
             document.getElementById('total_display').innerText = `РАЗОМ ВИТРАТИ: ${total.toFixed(0)} грн`;
             const bEl = document.getElementById('bal_txt');
-            bEl.style.color = bal < 0 ? "#d9534f" : "#2e7d32";
-            bEl.innerText = bal < 0 ? `ПЕРЕВИТРАТА: ${Math.abs(bal).toFixed(0)} грн` : `${bal.toFixed(0)} грн`;
+            
+            if (total === 0 && rec === 0) {
+                bEl.innerText = "";
+            } else {
+                bEl.style.color = bal < 0 ? "#d9534f" : "#2e7d32";
+                bEl.innerText = bal < 0 ? `ПЕРЕВИТРАТА: ${Math.abs(bal).toFixed(0)} грн` : `${bal.toFixed(0)} грн`;
+            }
         }
 
         function send() {
