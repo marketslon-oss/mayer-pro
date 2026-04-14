@@ -44,13 +44,13 @@
         </div>
 
         <div class="row">
-            <div><label>🏨 ПРОЖИВАННЯ</label><input type="number" id="hotel" placeholder="" oninput="calc()"></div>
-            <div><label>🍔 ДОБОВІ</label><input type="number" id="diem" placeholder="" oninput="calc()"></div>
+            <div><label>🏨 ПРОЖИВАННЯ</label><input type="number" id="hotel" placeholder="0" oninput="calc()"></div>
+            <div><label>🍔 ДОБОВІ</label><input type="number" id="diem" placeholder="0" oninput="calc()"></div>
         </div>
 
         <div class="row">
-            <div><label>🚌 ТРАНСПОРТ</label><input type="number" id="trans" placeholder="" oninput="calc()"></div>
-            <div><label>🛠️ ДОДАТКОВІ</label><input type="number" id="extra" placeholder="" oninput="calc()"></div>
+            <div><label>🚌 ТРАНСПОРТ</label><input type="number" id="trans" placeholder="0" oninput="calc()"></div>
+            <div><label>🛠️ ДОДАТКОВІ</label><input type="number" id="extra" placeholder="0" oninput="calc()"></div>
         </div>
 
         <div class="row">
@@ -81,35 +81,34 @@
         tg.expand();
         const p = new URLSearchParams(window.location.search);
 
-        // Функція для перевірки на 0 або порожньо
-        function clean(val) {
+        // Допоміжна функція: якщо значення 0 або null, повертаємо порожнечу
+        function valOrEmpty(val) {
             return (val && val !== "0" && val !== "null") ? val : "";
         }
 
-        // Наповнення даними
+        // Заповнення
         document.getElementById('pib').innerText = p.get('pib') || '---';
         document.getElementById('pos').innerText = p.get('posada') || '---';
         document.getElementById('vid').innerText = p.get('viddil') || '---';
         document.getElementById('start').value = p.get('start') || '';
         document.getElementById('end').value = p.get('end') || '';
         
-        // Прибираємо "1" у діб, якщо немає даних
+        // Кількість діб - не показуємо "1" за замовчуванням
         let d = p.get('days');
         document.getElementById('days').value = (d && d !== "1" && d !== "0") ? d : "";
 
-        document.getElementById('received').value = clean(p.get('money_received'));
+        document.getElementById('received').value = valOrEmpty(p.get('money_received'));
 
         const os = parseFloat(p.get('o_start')) || 0;
         const oe = parseFloat(p.get('o_end')) || 0;
-        document.getElementById('o_start').value = clean(p.get('o_start'));
-        document.getElementById('o_end').value = clean(p.get('o_end'));
+        document.getElementById('o_start').value = valOrEmpty(p.get('o_start'));
+        document.getElementById('o_end').value = valOrEmpty(p.get('o_end'));
         
         let km = oe - os;
         document.getElementById('km_txt').innerText = km > 0 ? km.toFixed(0) : "";
         
-        let fl = p.get('f_liters');
-        document.getElementById('fl_txt').innerText = clean(fl);
-        document.getElementById('f_money').value = clean(p.get('f_money'));
+        document.getElementById('fl_txt').innerText = valOrEmpty(p.get('f_liters'));
+        document.getElementById('f_money').value = valOrEmpty(p.get('f_money'));
 
         function calc() {
             const h = parseFloat(document.getElementById('hotel').value) || 0;
