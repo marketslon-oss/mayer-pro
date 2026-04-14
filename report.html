@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mayer Report Final v10.5</title>
+    <title>Mayer Report Final v10.6</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
         
-        /* ЛОАДЕР */
         #loading_layer { 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
             height: 100vh; position: fixed; top: 0; left: 0; width: 100%; background: #f4f4f4; z-index: 9999;
@@ -31,7 +30,6 @@
         
         .odo_frame { background: #fdf2f2; padding: 10px; border-radius: 8px; border: 1px solid #f5c6cb; margin-bottom: 10px; }
         
-        /* БЛОК ОТРИМАНО ТА ЗАЛИШОК В ОДИН РЯДОК */
         .balance_container { 
             background: #eef7ee; padding: 12px; border-radius: 10px; border: 1px solid #c3e6cb; margin-bottom: 15px;
             display: flex; justify-content: space-between; align-items: center;
@@ -76,8 +74,8 @@
 
         <div class="odo_frame">
             <div class="row" style="margin-bottom:5px;">
-                <div><label>📟 ОДО ВИЇЗД</label><input type="text" id="in_os" class="gray_box" readonly></div>
-                <div><label>🏁 ОДО ПРИБУТТЯ</label><input type="text" id="in_oe" class="gray_box" readonly></div>
+                <div><label>📟 ОДОМЕТР ВИЇЗД</label><input type="text" id="in_os" class="gray_box" readonly></div>
+                <div><label>🏁 ОДОМЕТР ПРИБУТТЯ</label><input type="text" id="in_oe" class="gray_box" readonly></div>
             </div>
             <div style="text-align:center; font-size:11px; font-weight:bold; color:#d9534f;">
                 ПРОБІГ: <span id="text_km">0</span> КМ | ⛽ ПАЛИВО: <span id="text_fl">0</span> Л
