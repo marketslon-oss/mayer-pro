@@ -3,181 +3,184 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Звіт Mayer v10.3</title>
+    <title>Звіт Mayer v10.4</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
         
-        /* ЛОАДЕР — показується відразу при завантаженні */
-        #loader { 
+        /* НОВИЙ ЛОАДЕР */
+        #loading_screen { 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            height: 100vh; position: fixed; top: 0; left: 0; width: 100%; background: #f4f4f4; z-index: 9999;
+            height: 100vh; position: fixed; top: 0; left: 0; width: 100%; background: #f4f4f4; z-index: 10000;
         }
-        .spinner {
-            width: 50px; height: 50px; border: 5px solid #ccc;
+        .loader_circle {
+            width: 45px; height: 45px; border: 5px solid #ddd;
             border-top: 5px solid #71a95e; border-radius: 50%;
-            animation: spin 1s linear infinite; margin-bottom: 15px;
+            animation: spin_anim 0.8s linear infinite; margin-bottom: 15px;
         }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes spin_anim { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* КАРТКА — прихована, поки йде завантаження */
-        .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: none; }
+        .form_card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: none; }
         
         .user-header { background: #f1f1f1; padding: 10px; border-radius: 10px; margin-bottom: 10px; font-size: 13px; border-left: 5px solid #71a95e; }
         .row { display: flex; gap: 10px; align-items: flex-end; margin-bottom: 10px; }
         .row > div { flex: 1; display: flex; flex-direction: column; }
         label { display: block; font-weight: bold; font-size: 9px; color: #555; text-transform: uppercase; margin-bottom: 4px; }
         input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
-        .gray { background: #f9f9f9; color: #444; font-weight: bold; border: 1px dashed #bbb; }
+        .gray_input { background: #f9f9f9; color: #444; font-weight: bold; border: 1px dashed #bbb; }
         
         .odo-box { background: #fdf2f2; padding: 10px; border-radius: 8px; border: 1px solid #f5c6cb; margin-bottom: 10px; }
         
-        /* РАМКА ЗАЛИШКУ */
-        .bal-box { background: #eef7ee; padding: 10px; border-radius: 8px; border: 1px solid #c3e6cb; margin-bottom: 10px; }
+        /* НОВА РАМКА ЗАЛИШКУ (в один рядок) */
+        .balance_frame { 
+            background: #eef7ee; padding: 12px; border-radius: 8px; border: 1px solid #c3e6cb; margin-bottom: 10px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .balance_item { flex: 1; text-align: center; }
+        .balance_divider { width: 1px; height: 30px; background: #c3e6cb; margin: 0 10px; }
 
         .total-box { background: #eef7ee; color: #2e7d32; border: 1px solid #2e7d32; padding: 12px; border-radius: 8px; text-align: center; margin-top: 10px; font-weight: bold; font-size: 18px; }
-        .btn-up { background: #5d8aa8; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 11px; font-weight: bold; width: 100%; cursor: pointer; }
-        .btn-save { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; }
+        .btn-file { background: #5d8aa8; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 11px; font-weight: bold; width: 100%; cursor: pointer; }
+        .btn-submit { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; }
     </style>
 </head>
 <body>
 
-    <div id="loader">
-        <div class="spinner"></div>
-        <div style="color: #555;">Отримуємо дані з таблиці...</div>
+    <div id="loading_screen">
+        <div class="loader_circle"></div>
+        <div style="color: #666; font-size: 14px;">Завантаження...</div>
     </div>
 
-    <div class="card" id="main_card">
+    <div class="form_card" id="main_content">
         <div class="user-header">
-            <b>ПІБ:</b> <span id="pib_txt">...</span><br>
-            <b>Посада:</b> <span id="pos_txt">...</span> | <b>Відділ:</b> <span id="vid_txt">...</span><br>
-            <b>№ Поїздки:</b> <span id="trip_id_txt" style="color:#d9534f; font-weight: bold;">...</span>
+            <b>ПІБ:</b> <span id="txt_pib">...</span><br>
+            <b>Посада:</b> <span id="txt_pos">...</span> | <b>Відділ:</b> <span id="txt_vid">...</span><br>
+            <b>№ Поїздки:</b> <span id="txt_trip" style="color:#d9534f; font-weight: bold;">...</span>
         </div>
 
         <div style="margin-bottom:10px;">
             <label>🎯 МЕТА ВІДРЯДЖЕННЯ</label>
-            <input type="text" id="purpose" class="gray" readonly>
+            <input type="text" id="inp_purpose" class="gray_input" readonly>
         </div>
         <div style="margin-bottom:10px;">
             <label>📍 МАРШРУТ</label>
-            <input type="text" id="dest" class="gray" readonly>
+            <input type="text" id="inp_dest" class="gray_input" readonly>
         </div>
 
         <div class="row">
-            <div><label>📅 ВИЇЗД</label><input type="text" id="start" class="gray" readonly></div>
-            <div><label>📅 ПРИБУТТЯ</label><input type="text" id="end" class="gray" readonly></div>
-            <div style="flex:0.4;"><label>🔢 ДІБ</label><input type="text" id="days" class="gray" readonly></div>
+            <div><label>📅 ВИЇЗД</label><input type="text" id="inp_start" class="gray_input" readonly></div>
+            <div><label>📅 ПРИБУТТЯ</label><input type="text" id="inp_end" class="gray_input" readonly></div>
+            <div style="flex:0.4;"><label>🔢 ДІБ</label><input type="text" id="inp_days" class="gray_input" readonly></div>
         </div>
 
         <div class="odo-box">
             <div class="row" style="margin-bottom:5px;">
-                <div><label>📟 ОДО ВИЇЗД</label><input type="text" id="o_start" class="gray" readonly></div>
-                <div><label>🏁 ОДО ПРИБУТТЯ</label><input type="text" id="o_end" class="gray" readonly></div>
+                <div><label>📟 ОДО ВИЇЗД</label><input type="text" id="inp_os" class="gray_input" readonly></div>
+                <div><label>🏁 ОДО ПРИБУТТЯ</label><input type="text" id="inp_oe" class="gray_input" readonly></div>
             </div>
             <div style="text-align:center; font-size:11px; font-weight:bold; color:#d9534f;">
-                ПРОБІГ ЗА ЖУРНАЛОМ: <span id="km_val">0</span> КМ | ⛽ ПАЛИВО: <span id="fl_val">0</span> Л
+                ПРОБІГ: <span id="val_km">0</span> КМ | ⛽ ПАЛИВО: <span id="val_fl">0</span> Л
             </div>
         </div>
 
         <div class="row">
-            <div><label>🏨 ПРОЖИВАННЯ</label><input type="number" id="hotel" placeholder="0" oninput="calc()"></div>
-            <div><label>🍔 ДОБОВІ</label><input type="number" id="diem" placeholder="0" oninput="calc()"></div>
+            <div><label>🏨 ПРОЖИВАННЯ</label><input type="number" id="inp_hotel" placeholder="0" oninput="runCalc()"></div>
+            <div><label>🍔 ДОБОВІ</label><input type="number" id="inp_diem" placeholder="0" oninput="runCalc()"></div>
         </div>
 
         <div class="row">
-            <div><label>🚌 ГРОМАДСЬКИЙ ТРАНСПОРТ</label><input type="number" id="trans" placeholder="0" oninput="calc()"></div>
-            <div><label>🛠️ ДОДАТКОВІ ВИТРАТИ</label><input type="number" id="extra" placeholder="0" oninput="calc()"></div>
+            <div><label>🚌 ГРОМАДСЬКИЙ ТРАНСПОРТ</label><input type="number" id="inp_trans" placeholder="0" oninput="runCalc()"></div>
+            <div><label>🛠️ ДОДАТКОВІ ВИТРАТИ</label><input type="number" id="inp_extra" placeholder="0" oninput="calc()"></div>
         </div>
 
         <div style="margin-bottom:15px;">
             <label>📝 ОПИШІТЬ ВИТРАТИ (ПРИМІТКА)</label>
-            <input type="text" id="comm" placeholder="Деталі витрат...">
+            <input type="text" id="inp_comm" placeholder="Деталі витрат...">
         </div>
 
-        <div class="bal-box">
-            <div class="row" style="margin-bottom:0;">
-                <div><label>💰 ОТРИМАНО</label><input type="text" id="received" class="gray" readonly></div>
-                <div style="text-align: center;">
-                    <label>⚖️ ЗАЛИШОК</label>
-                    <div id="bal_txt" style="font-weight: bold; font-size: 20px; padding-top: 5px; color: #2e7d32;">0</div>
-                </div>
+        <div class="balance_frame">
+            <div class="balance_item">
+                <label>💰 ОТРИМАНО</label>
+                <input type="text" id="inp_rec" class="gray_input" readonly style="text-align: center; border: none; background: transparent;">
+            </div>
+            <div class="balance_divider"></div>
+            <div class="balance_item">
+                <label>⚖️ ЗАЛИШОК</label>
+                <div id="txt_bal" style="font-weight: bold; font-size: 18px; color: #2e7d32;">0</div>
             </div>
         </div>
 
-        <div class="total-box" id="total_display">РАЗОМ ВИТРАТИ: 0 грн</div>
+        <div class="total-box" id="display_total">РАЗОМ ВИТРАТИ: 0 грн</div>
 
         <div class="row" style="margin-top:15px;">
-            <div><button type="button" class="btn-up" onclick="document.getElementById('f1').click()">📁 ФАЙЛ</button><input type="file" id="f1" style="display:none"></div>
-            <div><button type="button" class="btn-up" onclick="document.getElementById('f2').click()">📷 ФОТО</button><input type="file" id="f2" accept="image/*" capture="camera" style="display:none"></div>
+            <div><button type="button" class="btn-file" onclick="document.getElementById('f1').click()">📁 ФАЙЛ</button><input type="file" id="f1" style="display:none"></div>
+            <div><button type="button" class="btn-file" onclick="document.getElementById('f2').click()">📷 ФОТО</button><input type="file" id="f2" accept="image/*" capture="camera" style="display:none"></div>
         </div>
 
-        <button class="btn-save" onclick="send()">💾 Надіслати звіт</button>
+        <button class="btn-submit" onclick="finalSend()">💾 Надіслати звіт</button>
     </div>
 
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
-        const p = new URLSearchParams(window.location.search);
+        const urlP = new URLSearchParams(window.location.search);
 
-        function fix(v) { return (!v || v === "0" || v === "null") ? "" : v; }
+        function clean(v) { return (!v || v === "0" || v === "null") ? "" : v; }
 
-        // ЗАВАНТАЖЕННЯ ДАНИХ
-        window.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('pib_txt').innerText = p.get('pib') || '---';
-            document.getElementById('pos_txt').innerText = p.get('posada') || '---';
-            document.getElementById('vid_txt').innerText = p.get('viddil') || '---';
-            document.getElementById('trip_id_txt').innerText = p.get('trip_id') || '---';
+        window.addEventListener('load', () => {
+            document.getElementById('txt_pib').innerText = urlP.get('pib') || '---';
+            document.getElementById('txt_pos').innerText = urlP.get('posada') || '---';
+            document.getElementById('txt_vid').innerText = urlP.get('viddil') || '---';
+            document.getElementById('txt_trip').innerText = urlP.get('trip_id') || '---';
             
-            document.getElementById('purpose').value = p.get('purpose') || '';
-            document.getElementById('dest').value = p.get('dest') || '';
-            document.getElementById('start').value = p.get('start') || '';
-            document.getElementById('end').value = p.get('end') || '';
-            document.getElementById('days').value = fix(p.get('days'));
-            document.getElementById('received').value = fix(p.get('money_received'));
-            document.getElementById('o_start').value = fix(p.get('o_start'));
-            document.getElementById('o_end').value = fix(p.get('o_end'));
+            document.getElementById('inp_purpose').value = urlP.get('purpose') || '';
+            document.getElementById('inp_dest').value = urlP.get('dest') || '';
+            document.getElementById('inp_start').value = urlP.get('start') || '';
+            document.getElementById('inp_end').value = urlP.get('end') || '';
+            document.getElementById('inp_days').value = clean(urlP.get('days'));
+            document.getElementById('inp_rec').value = clean(urlP.get('money_received'));
+            document.getElementById('inp_os').value = clean(urlP.get('o_start'));
+            document.getElementById('inp_oe').value = clean(urlP.get('o_end'));
             
-            let os = parseFloat(p.get('o_start')) || 0;
-            let oe = parseFloat(p.get('o_end')) || 0;
-            let km = oe - os;
-            document.getElementById('km_val').innerText = km > 0 ? km.toFixed(0) : "0";
-            document.getElementById('fl_val').innerText = fix(p.get('f_liters')) || "0";
+            let os_val = parseFloat(urlP.get('o_start')) || 0;
+            let oe_val = parseFloat(urlP.get('o_end')) || 0;
+            document.getElementById('val_km').innerText = (oe_val - os_val) > 0 ? (oe_val - os_val).toFixed(0) : "0";
+            document.getElementById('val_fl').innerText = clean(urlP.get('f_liters')) || "0";
 
-            calc();
+            runCalc();
 
-            // ПРИБИРАЄМО ЛОАДЕР ТА ПОКАЗУЄМО ФОРМУ
             setTimeout(() => {
-                document.getElementById('loader').style.display = 'none';
-                document.getElementById('main_card').style.display = 'block';
-            }, 500); 
+                document.getElementById('loading_screen').style.display = 'none';
+                document.getElementById('main_content').style.display = 'block';
+            }, 600);
         });
 
-        function calc() {
-            const h = parseFloat(document.getElementById('hotel').value) || 0;
-            const d = parseFloat(document.getElementById('diem').value) || 0;
-            const t = parseFloat(document.getElementById('trans').value) || 0;
-            const e = parseFloat(document.getElementById('extra').value) || 0;
-            const rec = parseFloat(document.getElementById('received').value) || 0;
+        function runCalc() {
+            const h = parseFloat(document.getElementById('inp_hotel').value) || 0;
+            const d = parseFloat(document.getElementById('inp_diem').value) || 0;
+            const t = parseFloat(document.getElementById('inp_trans').value) || 0;
+            const e = parseFloat(document.getElementById('inp_extra').value) || 0;
+            const r = parseFloat(document.getElementById('inp_rec').value.replace(/\s/g, '')) || 0;
 
             const total = h + d + t + e;
-            const bal = rec - total;
+            const bal = r - total;
 
-            document.getElementById('total_display').innerText = `РАЗОМ ВИТРАТИ: ${total.toFixed(0)} грн`;
-            const bEl = document.getElementById('bal_txt');
+            document.getElementById('display_total').innerText = `РАЗОМ ВИТРАТИ: ${total.toFixed(0)} грн`;
+            const bEl = document.getElementById('txt_bal');
             bEl.style.color = bal < 0 ? "#d9534f" : "#2e7d32";
             bEl.innerText = bal < 0 ? `-${Math.abs(bal).toFixed(0)}` : `${bal.toFixed(0)}`;
         }
 
-        function send() {
+        function finalSend() {
             tg.sendData(JSON.stringify({
                 type: "report_update",
-                trip_id: p.get('trip_id'),
-                hotel: document.getElementById('hotel').value || "0",
-                diem: document.getElementById('diem').value || "0",
-                trans: document.getElementById('trans').value || "0",
-                extra: document.getElementById('extra').value || "0",
-                comment: document.getElementById('comm').value || "",
-                total: document.getElementById('total_display').innerText.replace(/\D/g, '')
+                trip_id: urlP.get('trip_id'),
+                hotel: document.getElementById('inp_hotel').value || "0",
+                diem: document.getElementById('inp_diem').value || "0",
+                trans: document.getElementById('inp_trans').value || "0",
+                extra: document.getElementById('inp_extra').value || "0",
+                comment: document.getElementById('inp_comm').value || "",
+                total: document.getElementById('display_total').innerText.replace(/\D/g, '')
             }));
             tg.close();
         }
