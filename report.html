@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Звіт Mayer v9.0</title>
+    <title>Звіт Mayer v9.5</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
@@ -15,8 +15,8 @@
         input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
         .gray { background: #f9f9f9; color: #444; font-weight: bold; border: 1px dashed #bbb; }
         .odo-box { background: #fdf2f2; padding: 10px; border-radius: 8px; border: 1px solid #f5c6cb; margin-bottom: 10px; }
-        .btn-up { background: #5d8aa8; color: white; border: none; padding: 10px; border-radius: 5px; font-size: 11px; font-weight: bold; width: 100%; cursor: pointer; }
         .total-box { background: #eef7ee; color: #2e7d32; border: 1px solid #2e7d32; padding: 12px; border-radius: 8px; text-align: center; margin-top: 10px; font-weight: bold; font-size: 18px; }
+        .btn-up { background: #5d8aa8; color: white; border: none; padding: 10px; border-radius: 5px; font-size: 11px; font-weight: bold; width: 100%; cursor: pointer; }
         .btn-save { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; }
     </style>
 </head>
@@ -49,18 +49,18 @@
         </div>
 
         <div class="row">
-            <div><label>🚌 ТРАНСПОРТ</label><input type="number" id="trans" placeholder="0" oninput="calc()"></div>
-            <div><label>🛠️ ДОДАТКОВІ</label><input type="number" id="extra" placeholder="0" oninput="calc()"></div>
+            <div><label>🚌 ГРОМАДСЬКИЙ ТРАНСПОРТ</label><input type="number" id="trans" placeholder="0" oninput="calc()"></div>
+            <div><label>🛠️ ДОДАТКОВІ ВИТРАТИ</label><input type="number" id="extra" placeholder="0" oninput="calc()"></div>
         </div>
 
         <div class="row">
-            <div style="flex:1.5;"><label>📝 ПРИМІТКА</label><input type="text" id="comm" placeholder="Кропивницький-Київ-Кропивницький"></div>
+            <div style="flex:1.5;"><label>📝 ПРИМІТКА</label><input type="text" id="comm" placeholder="Опишіть витрати"></div>
             <div><label>⛽ ЗАПРАВКА (ГРН)</label><input type="number" id="f_money" class="gray" readonly></div>
         </div>
 
         <div class="row">
             <div><label>💰 ОТРИМАНО</label><input type="number" id="received" class="gray" readonly style="text-align: center;"></div>
-            <div id="bal_container" style="text-align: center;">
+            <div style="text-align: center;">
                 <label>⚖️ ЗАЛИШОК / ПЕРЕВИТРАТА</label>
                 <div id="bal_txt" style="font-weight: bold; font-size: 14px; padding-top: 8px;"></div>
             </div>
@@ -81,34 +81,26 @@
         tg.expand();
         const p = new URLSearchParams(window.location.search);
 
-        // Допоміжна функція: якщо значення 0 або null, повертаємо порожнечу
-        function valOrEmpty(val) {
-            return (val && val !== "0" && val !== "null") ? val : "";
+        function fixZero(val) {
+            return (!val || val === "0" || val === "null") ? "" : val;
         }
 
-        // Заповнення
         document.getElementById('pib').innerText = p.get('pib') || '---';
         document.getElementById('pos').innerText = p.get('posada') || '---';
         document.getElementById('vid').innerText = p.get('viddil') || '---';
         document.getElementById('start').value = p.get('start') || '';
         document.getElementById('end').value = p.get('end') || '';
-        
-        // Кількість діб - не показуємо "1" за замовчуванням
-        let d = p.get('days');
-        document.getElementById('days').value = (d && d !== "1" && d !== "0") ? d : "";
-
-        document.getElementById('received').value = valOrEmpty(p.get('money_received'));
+        document.getElementById('days').value = fixZero(p.get('days'));
+        document.getElementById('received').value = fixZero(p.get('money_received'));
+        document.getElementById('o_start').value = fixZero(p.get('o_start'));
+        document.getElementById('o_end').value = fixZero(p.get('o_end'));
+        document.getElementById('f_money').value = fixZero(p.get('f_money'));
 
         const os = parseFloat(p.get('o_start')) || 0;
         const oe = parseFloat(p.get('o_end')) || 0;
-        document.getElementById('o_start').value = valOrEmpty(p.get('o_start'));
-        document.getElementById('o_end').value = valOrEmpty(p.get('o_end'));
-        
         let km = oe - os;
         document.getElementById('km_txt').innerText = km > 0 ? km.toFixed(0) : "";
-        
-        document.getElementById('fl_txt').innerText = valOrEmpty(p.get('f_liters'));
-        document.getElementById('f_money').value = valOrEmpty(p.get('f_money'));
+        document.getElementById('fl_txt').innerText = fixZero(p.get('f_liters'));
 
         function calc() {
             const h = parseFloat(document.getElementById('hotel').value) || 0;
@@ -133,12 +125,17 @@
         }
 
         function send() {
-            const result = {
+            const data = {
+                type: "report_update",
                 trip_id: p.get('trip_id'),
-                total_spent: document.getElementById('total_display').innerText,
-                comment: document.getElementById('comm').value
+                hotel: document.getElementById('hotel').value || "0",
+                diem: document.getElementById('diem').value || "0",
+                trans: document.getElementById('trans').value || "0",
+                extra: document.getElementById('extra').value || "0",
+                comment: document.getElementById('comm').value || "",
+                total: document.getElementById('total_display').innerText.replace(/\D/g, '')
             };
-            tg.sendData(JSON.stringify(result));
+            tg.sendData(JSON.stringify(data));
             tg.close();
         }
         calc();
