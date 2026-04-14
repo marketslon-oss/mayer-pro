@@ -3,41 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mayer Report Final v10.6</title>
+    <title>Mayer Report Final v10.7</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
-        
-        #loading_layer { 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            height: 100vh; position: fixed; top: 0; left: 0; width: 100%; background: #f4f4f4; z-index: 9999;
-        }
-        .loader_spin {
-            width: 45px; height: 45px; border: 5px solid #ddd;
-            border-top: 5px solid #71a95e; border-radius: 50%;
-            animation: spin_f 0.8s linear infinite; margin-bottom: 15px;
-        }
+        #loading_layer { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; position: fixed; top: 0; left: 0; width: 100%; background: #f4f4f4; z-index: 9999; }
+        .loader_spin { width: 45px; height: 45px; border: 5px solid #ddd; border-top: 5px solid #71a95e; border-radius: 50%; animation: spin_f 0.8s linear infinite; margin-bottom: 15px; }
         @keyframes spin_f { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
         .report_card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: none; }
-        
         .user-header { background: #f1f1f1; padding: 10px; border-radius: 10px; margin-bottom: 10px; font-size: 13px; border-left: 5px solid #71a95e; }
         .row { display: flex; gap: 10px; align-items: flex-end; margin-bottom: 10px; }
         .row > div { flex: 1; display: flex; flex-direction: column; }
         label { display: block; font-weight: bold; font-size: 9px; color: #555; text-transform: uppercase; margin-bottom: 4px; }
         input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
         .gray_box { background: #f9f9f9; color: #444; font-weight: bold; border: 1px dashed #bbb; }
-        
         .odo_frame { background: #fdf2f2; padding: 10px; border-radius: 8px; border: 1px solid #f5c6cb; margin-bottom: 10px; }
-        
-        .balance_container { 
-            background: #eef7ee; padding: 12px; border-radius: 10px; border: 1px solid #c3e6cb; margin-bottom: 15px;
-            display: flex; justify-content: space-between; align-items: center;
-        }
+        .fuel_frame { background: #fffde7; padding: 10px; border-radius: 8px; border: 1px solid #fff59d; margin-bottom: 10px; }
+        .balance_container { background: #eef7ee; padding: 12px; border-radius: 10px; border: 1px solid #c3e6cb; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
         .bal_part { flex: 1; text-align: center; }
         .bal_divider { width: 1px; height: 35px; background: #c3e6cb; margin: 0 5px; }
         .bal_val { font-size: 18px; font-weight: bold; margin-top: 2px; }
-
         .total_summary { background: #eef7ee; color: #2e7d32; border: 1px solid #2e7d32; padding: 12px; border-radius: 8px; text-align: center; margin-top: 10px; font-weight: bold; font-size: 18px; }
         .btn_action { background: #5d8aa8; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 11px; font-weight: bold; width: 100%; cursor: pointer; }
         .btn_submit { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; }
@@ -73,12 +58,23 @@
         </div>
 
         <div class="odo_frame">
-            <div class="row" style="margin-bottom:5px;">
+            <div class="row">
                 <div><label>📟 ОДОМЕТР ВИЇЗД</label><input type="text" id="in_os" class="gray_box" readonly></div>
                 <div><label>🏁 ОДОМЕТР ПРИБУТТЯ</label><input type="text" id="in_oe" class="gray_box" readonly></div>
             </div>
-            <div style="text-align:center; font-size:11px; font-weight:bold; color:#d9534f;">
-                ПРОБІГ: <span id="text_km">0</span> КМ | ⛽ ПАЛИВО: <span id="text_fl">0</span> Л
+            
+            <div class="row" style="margin-top:5px; margin-bottom:5px;">
+                <div><label>🗺️ ПЛАН КМ</label><input type="text" id="in_plan_km" class="gray_box" readonly></div>
+                <div><label>⛽ ПЛАН ПАЛИВА (Л)</label><input type="text" id="in_plan_fuel" class="gray_box" readonly></div>
+            </div>
+
+            <div class="row">
+                <div><label>⛽ ЗАЛИШОК ВИЇЗД (Л)</label><input type="number" id="fuel_start" placeholder="0"></div>
+                <div><label>⛽ ЗАЛИШОК ПРИБУТТЯ (Л)</label><input type="number" id="fuel_end" placeholder="0"></div>
+            </div>
+
+            <div style="text-align:center; font-size:11px; font-weight:bold; color:#d9534f; margin-top:8px;">
+                ФАКТ. ПРОБІГ: <span id="text_km">0</span> КМ | ⛽ ЗАПРАВЛЕНО: <span id="text_fl">0</span> Л
             </div>
         </div>
 
@@ -93,7 +89,7 @@
         </div>
 
         <div style="margin-bottom:15px;">
-            <label>📝 ОПИШІТЬ ВИТРАТИ (ПРИМІТКА)</label>
+            <label>📝 ПРИМІТКА (ОПИС ВИТРАТ)</label>
             <input type="text" id="in_comm" placeholder="Деталі витрат...">
         </div>
 
@@ -138,9 +134,11 @@
             document.getElementById('in_end').value = params.get('end') || '';
             document.getElementById('in_days').value = cleanVal(params.get('days'));
             
-            let rec_val = params.get('money_received') || "0";
-            document.getElementById('val_rec').innerText = rec_val;
+            // Нові поля плану
+            document.getElementById('in_plan_km').value = cleanVal(params.get('plan_km'));
+            document.getElementById('in_plan_fuel').value = cleanVal(params.get('plan_fuel'));
             
+            document.getElementById('val_rec').innerText = params.get('money_received') || "0";
             document.getElementById('in_os').value = cleanVal(params.get('o_start'));
             document.getElementById('in_oe').value = cleanVal(params.get('o_end'));
             
@@ -150,7 +148,6 @@
             document.getElementById('text_fl').innerText = cleanVal(params.get('f_liters')) || "0";
 
             doCalc();
-
             setTimeout(() => {
                 document.getElementById('loading_layer').style.display = 'none';
                 document.getElementById('form_content').style.display = 'block';
@@ -163,10 +160,8 @@
             const t = parseFloat(document.getElementById('in_trans').value) || 0;
             const e = parseFloat(document.getElementById('in_extra').value) || 0;
             const r = parseFloat(document.getElementById('val_rec').innerText) || 0;
-
             const spent = h + d + t + e;
             const remain = r - spent;
-
             document.getElementById('total_out').innerText = `РАЗОМ ВИТРАТИ: ${spent.toFixed(0)} грн`;
             const balEl = document.getElementById('val_bal');
             balEl.style.color = remain < 0 ? "#d9534f" : "#2e7d32";
@@ -181,6 +176,8 @@
                 diem: document.getElementById('in_diem').value || "0",
                 trans: document.getElementById('in_trans').value || "0",
                 extra: document.getElementById('in_extra').value || "0",
+                fuel_start: document.getElementById('fuel_start').value || "0",
+                fuel_end: document.getElementById('fuel_end').value || "0",
                 comment: document.getElementById('in_comm').value || "",
                 total: document.getElementById('total_out').innerText.replace(/\D/g, '')
             }));
