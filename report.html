@@ -155,12 +155,17 @@
             const e = parseFloat(document.getElementById('in_extra').value) || 0;
             
             // ФАКТИЧНЕ ПАЛИВО (ГРН)
-            const f_fact = parseFloat(document.getElementById('in_fact_fuel_sum').value) || 0;
+            let f_fact = parseFloat(document.getElementById('in_fact_fuel_sum').value) || 0;
             
-            // ОТРИМАНО ЗА ПЛАНОМ
+            // ЛОГІКА: Якщо заправок ще немає (0), але є ПЛАН палива, беремо план для розрахунку загальної суми
+            if (f_fact === 0) {
+                f_fact = parseFloat(document.getElementById('in_plan_fuel_sum').value) || 0;
+            }
+            
+            // ОТРИМАНО ЗА ПЛАНОМ (АВАНС)
             const received = parseFloat(document.getElementById('val_rec').innerText) || 0;
             
-            // ЗАГАЛЬНІ ВИТРАТИ
+            // ЗАГАЛЬНІ ВИТРАТИ: Проживання + Добові + Транспорт + Додаткові + Паливо (Факт або План)
             const totalSpent = h + d + t + e + f_fact;
             
             document.getElementById('val_total_spent').innerText = totalSpent.toFixed(0);
@@ -173,11 +178,11 @@
             
             // Колірна індикація
             if (balance < 0) {
-                bEl.style.color = "#d9534f"; // Перевитрата
+                bEl.style.color = "#d9534f"; // Червоний
                 document.getElementById('total_out').style.background = "#f8d7da";
                 document.getElementById('total_out').style.color = "#721c24";
             } else {
-                bEl.style.color = "#2e7d32"; // Залишок
+                bEl.style.color = "#2e7d32"; // Зелений
                 document.getElementById('total_out').style.background = "#d4edda";
                 document.getElementById('total_out').style.color = "#155724";
             }
