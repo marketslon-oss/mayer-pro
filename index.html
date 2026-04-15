@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>План Кошторис v3.3</title> 
+    <title>План Кошторис v3.4</title> 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
@@ -17,7 +17,6 @@
         .total-box { background: #eef7ee; color: #2e7d32; border: 1px solid #2e7d32; padding: 12px; border-radius: 8px; text-align: center; margin-top: 15px; font-weight: bold; font-size: 18px; }
         .btn-save { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; cursor: pointer; }
         .btn-upload { background: #5d8aa8; padding: 10px; font-size: 12px; margin-top: 5px; color: white; border: none; border-radius: 5px; width: 100%; cursor: pointer; }
-        .btn-save:disabled { background: #ccc; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -61,7 +60,7 @@
             <div><label>🏨 ГОТЕЛЬ:</label><input type="number" id="hotel" placeholder="0" oninput="calculate()"></div>
         </div>
 
-        <label>🍔 ДОБОВІ (ЗАГАЛЬНА СУМА):</label>
+        <label>🍔 ДОБОВІ (ЗА ВСЕ ВІДРЯДЖЕННЯ):</label>
         <input type="number" id="per_diem" placeholder="0" oninput="calculate()">
 
         <label>📎 ДОДАТИ ДОКУМЕНТИ:</label>
@@ -90,7 +89,7 @@
             const price = parseFloat(document.getElementById('price').value) || 0;
             const cons = parseFloat(document.getElementById('car').value) || 6.5;
             const hotel = parseFloat(document.getElementById('hotel').value) || 0;
-            const perDiem = parseFloat(document.getElementById('per_diem').value) || 0; // Сума як вона є
+            const perDiem = parseFloat(document.getElementById('per_diem').value) || 0; 
 
             let days = "";
             if (sVal && eVal) {
@@ -107,7 +106,7 @@
             document.getElementById('liters').value = liters;
             document.getElementById('fuel_sum').value = fuelSum;
 
-            // ВИПРАВЛЕНО: Прибираємо множення на days
+            // ТЕПЕР ДОБОВІ НЕ МНОЖАТЬСЯ НА ДНІ
             const total = (parseFloat(fuelSum) || 0) + hotel + perDiem;
             document.getElementById('total_display').innerText = `РАЗОМ: ${Math.round(total) || 0} грн`;
             
@@ -126,15 +125,13 @@
             if (!km || parseFloat(km) <= 0) missing.push("КМ");
             if (!price || parseFloat(price) <= 0) missing.push("Ціна");
 
-            let message = "Зберегти план?";
+            let message = "Зберегти план кошторис?";
             if (missing.length > 0) {
                 message = "⚠️ Увага! Не заповнено: " + missing.join(", ") + ". Все одно відправити?";
             }
 
             tg.showConfirm(message, function(ok) {
-                if (ok) {
-                    sendData(destination);
-                }
+                if (ok) { sendData(destination); }
             });
         }
 
@@ -161,7 +158,7 @@
                 fuel_liters: res.liters || "0",
                 fuel_sum: res.fuelSum || "0",
                 hotel: document.getElementById('hotel').value || "0",
-                per_diem: document.getElementById('per_diem').value || "0", // Передається просто цифра
+                per_diem: document.getElementById('per_diem').value || "0", 
                 total: res.total
             };
             
