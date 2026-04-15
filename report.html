@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mayer Report v11.9</title>
+    <title>Mayer Report v12.0</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
@@ -141,6 +141,10 @@
             document.getElementById('in_fact_fuel').value = fix(p.get('f_liters')) || "0";
             document.getElementById('in_fact_fuel_sum').value = fix(p.get('f_money')) || "0";
             
+            // НОВЕ: ПІДСТАНОВКА ФАКТИЧНИХ ЗАЛИШКІВ З ЖУРНАЛУ (L та M)
+            document.getElementById('fuel_start').value = fix(p.get('fuel_start_res'));
+            document.getElementById('fuel_end').value = fix(p.get('fuel_end_res'));
+
             document.getElementById('val_rec').innerText = p.get('money_received') || "0";
             
             doCalc();
@@ -154,35 +158,28 @@
             const t = parseFloat(document.getElementById('in_trans').value) || 0;
             const e = parseFloat(document.getElementById('in_extra').value) || 0;
             
-            // ФАКТИЧНЕ ПАЛИВО (ГРН)
             let f_fact = parseFloat(document.getElementById('in_fact_fuel_sum').value) || 0;
             
-            // ЛОГІКА: Якщо заправок ще немає (0), але є ПЛАН палива, беремо план для розрахунку загальної суми
             if (f_fact === 0) {
                 f_fact = parseFloat(document.getElementById('in_plan_fuel_sum').value) || 0;
             }
             
-            // ОТРИМАНО ЗА ПЛАНОМ (АВАНС)
             const received = parseFloat(document.getElementById('val_rec').innerText) || 0;
-            
-            // ЗАГАЛЬНІ ВИТРАТИ: Проживання + Добові + Транспорт + Додаткові + Паливо (Факт або План)
             const totalSpent = h + d + t + e + f_fact;
             
             document.getElementById('val_total_spent').innerText = totalSpent.toFixed(0);
             document.getElementById('total_out').innerText = `ВСЬОГО ВИТРАЧЕНО: ${totalSpent.toFixed(0)} грн`;
             
-            // РІЗНИЦЯ (ЗАЛИШОК)
             const balance = received - totalSpent;
             const bEl = document.getElementById('val_bal');
             bEl.innerText = balance.toFixed(0);
             
-            // Колірна індикація
             if (balance < 0) {
-                bEl.style.color = "#d9534f"; // Червоний
+                bEl.style.color = "#d9534f";
                 document.getElementById('total_out').style.background = "#f8d7da";
                 document.getElementById('total_out').style.color = "#721c24";
             } else {
-                bEl.style.color = "#2e7d32"; // Зелений
+                bEl.style.color = "#2e7d32";
                 document.getElementById('total_out').style.background = "#d4edda";
                 document.getElementById('total_out').style.color = "#155724";
             }
