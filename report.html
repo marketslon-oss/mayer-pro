@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mayer Report v11.8</title>
+    <title>Mayer Report v11.9</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
@@ -21,13 +21,11 @@
         .odo_bg { background: #fdf2f2; border-color: #f5c6cb; }
         .fuel_bg { background: #fffde7; border-color: #fff59d; }
         
-        /* ОНОВЛЕНИЙ БЛОК БАЛАНСУ */
         .balance_container { background: #eef7ee; padding: 12px; border-radius: 10px; border: 1px solid #c3e6cb; margin-bottom: 15px; }
         .bal_part { flex: 1; text-align: center; }
-        .bal_divider { width: 100%; height: 1px; background: #c3e6cb; margin: 8px 0; }
         .bal_val { font-size: 18px; font-weight: bold; margin-top: 2px; }
         
-        .total_summary { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; padding: 12px; border-radius: 8px; text-align: center; margin-top: 10px; font-weight: bold; font-size: 18px; transition: 0.3s; }
+        .total_summary { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; padding: 12px; border-radius: 8px; text-align: center; margin-top: 10px; font-weight: bold; font-size: 18px; }
         
         .btn_up { background: #5d8aa8; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 11px; font-weight: bold; width: 100%; cursor: pointer; text-align: center; }
         .btn_submit { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; }
@@ -95,7 +93,7 @@
                 <div style="width: 1px; height: 35px; background: #c3e6cb; margin: 0 5px;"></div>
                 <div class="bal_part"><label>📉 ФАКТ ВИТРАТИ</label><div id="val_total_spent" class="bal_val">0</div></div>
             </div>
-            <div class="bal_divider"></div>
+            <div style="width: 100%; height: 1px; background: #c3e6cb; margin: 8px 0;"></div>
             <div style="text-align: center;">
                 <label>⚖️ РІЗНИЦЯ (ЗАЛИШОК)</label>
                 <div id="val_bal" class="bal_val">0</div>
@@ -155,17 +153,21 @@
             const d = parseFloat(document.getElementById('in_diem').value) || 0;
             const t = parseFloat(document.getElementById('in_trans').value) || 0;
             const e = parseFloat(document.getElementById('in_extra').value) || 0;
-            const f_fact = parseFloat(document.getElementById('in_fact_fuel_sum').value) || 0;
-            const r = parseFloat(document.getElementById('val_rec').innerText) || 0;
             
-            // ПОВНИЙ РОЗРАХУНОК ФАКТИЧНИХ ВИТРАТ
+            // ФАКТИЧНЕ ПАЛИВО (ГРН)
+            const f_fact = parseFloat(document.getElementById('in_fact_fuel_sum').value) || 0;
+            
+            // ОТРИМАНО ЗА ПЛАНОМ
+            const received = parseFloat(document.getElementById('val_rec').innerText) || 0;
+            
+            // ЗАГАЛЬНІ ВИТРАТИ
             const totalSpent = h + d + t + e + f_fact;
             
             document.getElementById('val_total_spent').innerText = totalSpent.toFixed(0);
             document.getElementById('total_out').innerText = `ВСЬОГО ВИТРАЧЕНО: ${totalSpent.toFixed(0)} грн`;
             
-            // РОЗРАХУНОК РІЗНИЦІ (ЗАЛИШКУ)
-            const balance = r - totalSpent;
+            // РІЗНИЦЯ (ЗАЛИШОК)
+            const balance = received - totalSpent;
             const bEl = document.getElementById('val_bal');
             bEl.innerText = balance.toFixed(0);
             
@@ -194,7 +196,7 @@
                 fuel_end: document.getElementById('fuel_end').value || "0",
                 fuel_fact_sum: document.getElementById('in_fact_fuel_sum').value || "0",
                 comment: document.getElementById('in_comm').value || "",
-                total: finalSpent // Відправляємо повну суму всіх витрат
+                total: finalSpent
             }));
             tg.close();
         }
