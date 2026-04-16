@@ -9,11 +9,11 @@
         body { font-family: 'Arial', sans-serif; background-color: #f0f2f5; padding: 10px; margin: 0; }
         .card { background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 600px; margin: auto; }
         
-        /* Компактна шапка */
+        /* Компактна шапка з усіма даними */
         .header-info { 
             background: #f8f9fa; border-left: 4px solid #3b82f6; 
-            padding: 10px; border-radius: 4px; margin-bottom: 15px; 
-            line-height: 1.4; font-size: 12px; 
+            padding: 10px 12px; border-radius: 4px; margin-bottom: 15px; 
+            line-height: 1.5; font-size: 12px; 
         }
         .val { font-weight: 800; color: #000; }
         
@@ -37,7 +37,7 @@
         }
         .send-btn:disabled { background: #9ca3af; }
 
-        /* Список */
+        /* Список доданих рядків */
         .stop-card { 
             background: #fff; border: 1px solid #e5e7eb; padding: 10px; 
             margin-top: 8px; border-radius: 8px; position: relative; border-left: 4px solid #10b981;
@@ -53,6 +53,8 @@
 <div class="card">
     <div class="header-info">
         №: <span class="val" id="trip_id">...</span> | ВОДІЙ: <span class="val" id="pib">...</span><br>
+        ПОСАДА: <span class="val" id="posada">...</span><br>
+        ВІДДІЛ: <span class="val" id="viddil">...</span><br>
         АВТО: <span class="val" id="car">...</span> | МАРШРУТ: <span class="val" id="route_val">...</span><br>
         ПЕРІОД: <span class="val" id="date_start">...</span> — <span class="val" id="date_end">...</span>
     </div>
@@ -66,17 +68,17 @@
         
         <label>Мета поїздки:</label>
         <select id="in_meta">
+            <option value="Перемовини з клієнтом">Перемовини з клієнтом</option>
             <option value="Доставка товару">Доставка товару</option>
-            <option value="Перемовини">Перемовини</option>
             <option value="Сервісне обслуговування">Сервісне обслуговування</option>
-            <option value="Зустріч з клієнтом">Зустріч з клієнтом</option>
+            <option value="Зустріч з потенційним партнером">Зустріч з партнером</option>
             <option value="Інше (вказати в назві)">Інше</option>
         </select>
         
         <button class="add-btn" onclick="addPoint()">➕ Додати рядок до журналу</button>
     </div>
 
-    <h3 id="list_title" style="display: none; font-size: 14px;">📋 Сформований журнал:</h3>
+    <h3 id="list_title" style="display: none; font-size: 13px; margin-left: 5px;">📋 Сформований журнал:</h3>
     <div id="stops_list"></div>
 
     <button class="send-btn" id="submit_main" onclick="submitWaybill()" style="margin-top: 15px;">Надіслати Маршрутний лист</button>
@@ -89,15 +91,17 @@
     const params = new URLSearchParams(window.location.search);
     let points = [];
 
-    // Заповнення шапки
+    // Відображення даних у компактній шапці
     document.getElementById('trip_id').innerText = params.get('trip_id') || '---';
     document.getElementById('pib').innerText = params.get('pib') || '---';
+    document.getElementById('posada').innerText = params.get('posada') || '---';
+    document.getElementById('viddil').innerText = params.get('viddil') || '---';
     document.getElementById('car').innerText = params.get('car') || '---';
     document.getElementById('date_start').innerText = params.get('start') || '---';
     document.getElementById('date_end').innerText = params.get('end') || '---';
     document.getElementById('route_val').innerText = params.get('dest') || '---';
 
-    // Встановлюємо дату за замовчуванням (початок відрядження)
+    // Встановлюємо початкову дату
     if(params.get('start')) {
         const parts = params.get('start').split('.');
         if(parts.length === 3) {
@@ -116,7 +120,7 @@
         }
 
         points.push({ 
-            date: date.split('-').reverse().join('.'), // Робимо формат DD.MM.YYYY
+            date: date.split('-').reverse().join('.'),
             client: client,
             meta: meta,
             route: params.get('dest')
@@ -153,12 +157,12 @@
 
     function submitWaybill() {
         if (points.length === 0) {
-            alert("Додайте записи до журналу!");
+            alert("Журнал порожній!");
             return;
         }
 
         const mainBtn = document.getElementById('submit_main');
-        mainBtn.innerText = "⏳ Обробка...";
+        mainBtn.innerText = "⏳ Надсилаю...";
         mainBtn.disabled = true;
 
         tg.sendData(JSON.stringify({
