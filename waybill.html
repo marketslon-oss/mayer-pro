@@ -55,10 +55,12 @@
         
         <label>Мета візиту:</label>
         <select id="in_meta">
+            <option value="Зустріч з клієнтом">Зустріч з клієнтом</option>
             <option value="Перемовини">Перемовини</option>
-            <option value="Доставка">Доставка</option>
-            <option value="Сервіс">Сервіс</option>
-            <option value="Інше">Інше</option>
+            <option value="Доставка товару">Доставка товару</option>
+            <option value="Сервісне обслуговування">Сервіс / Ремонт</option>
+            <option value="Монтаж / Демонтаж">Монтаж / Демонтаж</option>
+            <option value="Інше (вказати в назві)">Інше</option>
         </select>
         
         <button class="add-btn" onclick="addPoint()">➕ Додати до списку</button>
@@ -66,10 +68,10 @@
 
     <div id="stops_list"></div>
 
-    <button class="check-btn" onclick="showPreview()" style="margin-top: 10px;">🔍 Перевірити весь маршрут</button>
+    <button class="check-btn" onclick="showPreview()" style="margin-top: 10px;">🔍 Перевірити та відсортувати</button>
 
     <div id="preview_box">
-        <b style="color: #d97706;">📄 ПЕРЕВІРКА ПЕРЕД ВІДПРАВКОЮ:</b>
+        <b style="color: #d97706;">📄 ПЕРЕВІРКА (ВІДСОРТОВАНО ЗА ДАТОЮ):</b>
         <div id="preview_content" style="margin: 10px 0;"></div>
         <button class="send-btn" id="submit_main" onclick="submitWaybill()">🚀 Все вірно, Надіслати</button>
     </div>
@@ -99,7 +101,9 @@
 
         if (!d || !city || !client) return alert("Заповніть дату, місто та клієнта!");
 
+        // Зберігаємо також сиру дату для сортування
         points.push({ 
+            rawDate: d, 
             date: d.split('-').reverse().join('.'),
             city: city,
             client: client,
@@ -108,8 +112,6 @@
 
         updateList();
         document.getElementById('in_client').value = '';
-        // Місто не очищуємо, бо наступний клієнт може бути в тому ж місті (економія часу)
-        
         document.getElementById('preview_box').style.display = 'none';
         document.getElementById('submit_main').style.display = 'none';
     }
@@ -129,11 +131,19 @@
 
     function showPreview() {
         if (points.length === 0) return alert("Додайте клієнтів!");
+
+        // --- СОРТУВАННЯ ЗА ДАТОЮ ---
+        points.sort((a, b) => new Date(a.rawDate) - new Date(b.rawDate));
+        
+        // Оновлюємо основний список, щоб водій бачив, що порядок змінився
+        updateList();
+
         const content = document.getElementById('preview_content');
         content.innerHTML = '';
         points.forEach((p, index) => {
-            content.innerHTML += `<div class="preview-item">${index + 1}. <b>${p.date}</b> — м. ${p.city}, ${p.client} (${p.meta})</div>`;
+            content.innerHTML += `<div class="preview-item">${index + 1}. <b>${p.date}</b> — м. ${p.city}, ${p.client} <br><small>(${p.meta})</small></div>`;
         });
+
         document.getElementById('preview_box').style.display = 'block';
         document.getElementById('submit_main').style.display = 'block';
         window.scrollTo(0, document.body.scrollHeight);
@@ -147,7 +157,7 @@
         tg.sendData(JSON.stringify({
             type: "waybill",
             trip_id: params.get('trip_id'),
-            stops: points
+            stops: points // Відправляємо вже відсортований масив
         }));
         setTimeout(() => tg.close(), 500);
     }
