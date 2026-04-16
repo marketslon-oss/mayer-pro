@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Маршрутний лист - Mayer Pro</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f9; padding: 15px; color: #333; }
+        .container { max-width: 500px; margin: auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #2c3e50; margin-bottom: 20px; }
+        .info-block { background: #e9ecef; padding: 10px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9em; }
+        .row { margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 0.85em; }
+        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+        
+        /* Таблиця доданих точок */
+        .stops-list { margin-top: 20px; width: 100%; border-collapse: collapse; }
+        .stop-item { background: #fff; border: 1px solid #ddd; padding: 10px; border-radius: 8px; margin-bottom: 10px; position: relative; }
+        .stop-item b { display: block; color: #2e7d32; }
+        .remove-btn { position: absolute; right: 10px; top: 10px; color: #dc3545; cursor: pointer; font-weight: bold; }
+
+        .add-btn { width: 100%; background: #28a745; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .send-btn { width: 100%; background: #007bff; color: white; border: none; padding: 15px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 20px; font-size: 1.1em; }
+        .total-km { text-align: right; font-weight: bold; margin-top: 10px; color: #007bff; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🗺️ Маршрутний лист</h2>
+    
+    <div class="info-block" id="user-info">
+        <b>Поїздка:</b> <span id="trip-id-display">...</span><br>
+        <b>Водій:</b> <span id="pib-display">...</span><br>
+        <b>Авто:</b> <span id="car-display">...</span>
+    </div>
+
+    <div style="background: #fdfdfe; border: 1px dashed #ccc; padding: 15px; border-radius: 8px;">
+        <div class="row">
+            <label>Дата:</label>
+            <input type="date" id="stop-date">
+        </div>
+        <div class="row">
+            <label>Маршрут (Звідки - Куди):</label>
+            <input type="text" id="stop-path" placeholder="напр: Київ - Житомир">
+        </div>
+        <div class="row">
+            <label>Клієнт / Мета:</label>
+            <input type="text" id="stop-client" placeholder="напр: ТОВ 'Світанок' / Доставка">
+        </div>
+        <div class="row">
+            <label>Пробіг на цій ділянці, км:</label>
+            <input type="number" id="stop-km" placeholder="0">
+        </div>
+        <button class="add-btn" onclick="addStop()">➕ Додати точку в список</button>
+    </div>
+
+    <h3 style="margin-top: 25px;">📋 Список зупинок:</h3>
+    <div id="stops-container">
+        </div>
+
+    <div class="total-km">Загальний пробіг: <span id="total-km-sum">0</span> км</div>
+
+    <button class="send-btn" onclick="sendData()">Надіслати Маршрутний Лист</button>
+</div>
+
+<script>
+    let tg = window.Telegram.WebApp;
+    tg.expand();
+
+    let stops = [];
+    const urlParams = new URLSearchParams(window.location.search);
+
+    // Заповнюємо дані з URL
+    document.getElementById('trip-id-display').innerText = urlParams.get('trip_id') || 'Не обрано';
+    document.getElementById('pib-display').innerText = urlParams.get('pib') || '';
+    document.getElementById('car-display').innerText = urlParams.get('car') || '';
+    document.getElementById('stop-date').valueAsDate = new Date();
+
+    function addStop() {
+        const date = document.getElementById('stop-date').value;
+        const path = document.getElementById('stop-path').value;
+        const client = document.getElementById('stop-client').value;
+        const km = document.getElementById('stop-km').value;
+
+        if (!path || !km) {
+            alert("Будь ласка, заповніть Маршрут та КМ");
+            return;
+        }
+
+        const stop = { date, path, client, km: parseFloat(km) };
+        stops.push(stop);
+        renderStops();
+
+        // Очищуємо поля
+        document.getElementById('stop-path').value = '';
+        document.getElementById('stop-client').value = '';
+        document.getElementById('stop-km').value = '';
+    }
+
+    function removeStop(index) {
+        stops.splice(index, 1);
+        renderStops();
+    }
+
+    function renderStops() {
+        const container = document.getElementById('stops-container');
+        container.innerHTML = '';
+        let total = 0;
+
+        stops.forEach((s, index) => {
+            total += s.km;
+            container.innerHTML += `
+                <div class="stop-item">
+                    <span class="remove-btn" onclick="removeStop(${index})">✕</span>
+                    <b>${s.date} | ${s.path}</b>
+                    <small>${s.client}</small> | <span>${s.km} км</span>
+                </div>
+            `;
+        });
+
+        document.getElementById('total-km-sum').innerText = total;
+    }
+
+    function sendData() {
+        if (stops.length === 0) {
+            alert("Додайте хоча б одну зупинку!");
+            return;
+        }
+
+        const data = {
+            type: "waybill",
+            trip_id: urlParams.get('trip_id'),
+            stops: stops
+        };
+
+        tg.sendData(JSON.stringify(data));
+        tg.close();
+    }
+</script>
+
+</body>
+</html>
