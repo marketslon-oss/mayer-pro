@@ -9,7 +9,7 @@
         body { font-family: 'Arial', sans-serif; background-color: #f0f2f5; padding: 10px; margin: 0; }
         .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 600px; margin: auto; }
         
-        /* Блок шапки як на скріншоті */
+        /* Шапка з даними */
         .header-info { 
             background: #f8f9fa; 
             border-left: 4px solid #3b82f6; 
@@ -17,73 +17,84 @@
             border-radius: 4px; 
             margin-bottom: 20px; 
             line-height: 1.8; 
-            font-size: 15px; 
+            font-size: 14px; 
         }
         .val { font-weight: 800; color: #000; }
         
-        .input-group { background: #fff; border: 1px solid #e5e7eb; padding: 15px; border-radius: 12px; }
-        label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 8px; color: #374151; }
+        /* Поля вводу */
+        .input-group { background: #fff; border: 1px solid #e5e7eb; padding: 15px; border-radius: 12px; margin-bottom: 20px; }
+        label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 8px; color: #374151; text-transform: uppercase; }
         
         input { 
             width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; 
             box-sizing: border-box; font-size: 16px; margin-bottom: 15px;
         }
-        input:readonly { background: #f9fafb; color: #111; font-weight: 600; }
+        input:readonly { background: #f9fafb; color: #111; font-weight: 600; border-color: #e5e7eb; }
 
+        /* Кнопки */
         .add-btn { 
-            width: 100%; background: #60a05b; color: white; border: none; 
+            width: 100%; background: #10b981; color: white; border: none; 
             padding: 14px; border-radius: 8px; font-weight: bold; cursor: pointer; 
-            font-size: 16px; display: flex; align-items: center; justify-content: center;
+            font-size: 16px; transition: 0.3s;
         }
-        .send-btn { 
-            width: 100%; background: #4f46e5; color: white; border: none; 
-            padding: 18px; border-radius: 12px; font-weight: bold; font-size: 17px; 
-            cursor: pointer; margin-top: 20px; 
-        }
+        .add-btn:active { transform: scale(0.98); }
 
-        .stop-card { 
-            background: #fdfdfd; border: 1px solid #e5e7eb; padding: 12px; 
-            margin-top: 12px; border-radius: 8px; position: relative; 
-            border-left: 4px solid #60a05b; font-weight: 600;
+        .send-btn { 
+            width: 100%; background: #3b82f6; color: white; border: none; 
+            padding: 18px; border-radius: 12px; font-weight: bold; font-size: 17px; 
+            cursor: pointer; margin-top: 10px; transition: 0.3s;
         }
-        .del-btn { position: absolute; top: 10px; right: 10px; color: #ef4444; font-size: 20px; cursor: pointer; }
+        .send-btn:disabled { background: #9ca3af; cursor: not-allowed; }
+
+        /* Список клієнтів */
+        .stop-card { 
+            background: #fff; border: 1px solid #e5e7eb; padding: 14px; 
+            margin-top: 10px; border-radius: 8px; position: relative; 
+            border-left: 4px solid #10b981; font-weight: 600; font-size: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .del-btn { position: absolute; top: 10px; right: 10px; color: #ef4444; font-size: 20px; cursor: pointer; padding: 0 5px; }
+        
+        h3 { font-size: 16px; color: #1f2937; margin: 20px 0 10px 0; padding-left: 5px; }
     </style>
 </head>
 <body>
 
 <div class="card">
     <div class="header-info">
-        № Поїздки: <span class="val" id="trip_id">...</span><br>
-        Водій: <span class="val" id="pib">...</span><br>
-        Посада: <span class="val" id="posada">...</span><br>
-        Відділ: <span class="val" id="viddil">...</span><br>
-        Авто: <span class="val" id="car">...</span><br>
-        Період: з <span class="val" id="date_start">...</span> по <span class="val" id="date_end">...</span>
+        № ПОЇЗДКИ: <span class="val" id="trip_id">...</span><br>
+        ВОДІЙ: <span class="val" id="pib">...</span><br>
+        ПОСАДА: <span class="val" id="posada">...</span><br>
+        ВІДДІЛ: <span class="val" id="viddil">...</span><br>
+        АВТО: <span class="val" id="car">...</span><br>
+        ПЕРІОД: <span class="val">з </span><span class="val" id="date_start">...</span><span class="val"> по </span><span class="val" id="date_end">...</span>
     </div>
 
     <div class="input-group">
         <label>Маршрут (з бази):</label>
         <input type="text" id="in_path" readonly>
         
-        <label style="color: #4f46e5;">Клієнт / Об'єкт / Мета:</label>
-        <input type="text" id="in_client" placeholder="Введіть назву клієнта або ціль">
+        <label style="color: #3b82f6;">Клієнт / Об'єкт / Мета:</label>
+        <input type="text" id="in_client" placeholder="Введіть назву або ціль візиту">
         
-        <button class="add-btn" onclick="addPoint()">➕ Додати клієнта до списку</button>
+        <button class="add-btn" onclick="addPoint()">➕ Додати до списку</button>
     </div>
 
+    <h3 id="list_title" style="display: none;">📋 Додані об'єкти:</h3>
     <div id="stops_list"></div>
 
-    <button class="send-btn" onclick="submitWaybill()">Надіслати до бази</button>
+    <button class="send-btn" id="submit_main" onclick="submitWaybill()">Надіслати до бази</button>
 </div>
 
 <script>
     let tg = window.Telegram.WebApp;
     tg.expand();
+    tg.MainButton.hide();
 
     const params = new URLSearchParams(window.location.search);
     let points = [];
 
-    // Заповнення шапки
+    // Ініціалізація даних з URL (які передав buttons.py)
     document.getElementById('trip_id').innerText = params.get('trip_id') || '---';
     document.getElementById('pib').innerText = params.get('pib') || '---';
     document.getElementById('posada').innerText = params.get('posada') || '---';
@@ -91,21 +102,27 @@
     document.getElementById('car').innerText = params.get('car') || '---';
     document.getElementById('date_start').innerText = params.get('start') || '---';
     document.getElementById('date_end').innerText = params.get('end') || '---';
-    
     document.getElementById('in_path').value = params.get('dest') || '';
 
     function addPoint() {
-        const client = document.getElementById('in_client').value;
-        if (!client) return alert("Введіть назву клієнта!");
+        const clientInput = document.getElementById('in_client');
+        const client = clientInput.value.trim();
+        
+        if (!client) {
+            alert("Будь ласка, введіть назву клієнта!");
+            return;
+        }
 
+        // Додаємо точку в масив
         points.push({ 
-            date_s: params.get('start'), 
-            date_e: params.get('end'), 
-            path: document.getElementById('in_path').value, 
-            client: client 
+            client: client,
+            path: document.getElementById('in_path').value,
+            date_s: params.get('start'),
+            date_e: params.get('end')
         });
+
+        clientInput.value = '';
         updateList();
-        document.getElementById('in_client').value = '';
     }
 
     function removePoint(i) {
@@ -115,24 +132,49 @@
 
     function updateList() {
         const list = document.getElementById('stops_list');
+        const title = document.getElementById('list_title');
+        
         list.innerHTML = '';
-        points.forEach((p, i) => {
-            list.innerHTML += `
-                <div class="stop-card">
-                    <span class="del-btn" onclick="removePoint(${i})">✕</span>
-                    ${p.client}
-                </div>`;
-        });
+        
+        if (points.length > 0) {
+            title.style.display = 'block';
+            points.forEach((p, i) => {
+                list.innerHTML += `
+                    <div class="stop-card">
+                        <span class="del-btn" onclick="removePoint(${i})">✕</span>
+                        ${p.client}
+                    </div>`;
+            });
+        } else {
+            title.style.display = 'none';
+        }
     }
 
     function submitWaybill() {
-        if (points.length === 0) return alert("Список порожній!");
-        tg.sendData(JSON.stringify({
+        if (points.length === 0) {
+            alert("Додайте хоча б одного клієнта перед відправкою!");
+            return;
+        }
+
+        const mainBtn = document.getElementById('submit_main');
+        mainBtn.innerText = "⏳ Надсилаю дані...";
+        mainBtn.disabled = true;
+        mainBtn.style.opacity = "0.7";
+
+        // Формуємо об'єкт для бота
+        const data = {
             type: "waybill",
             trip_id: params.get('trip_id'),
             stops: points
-        }));
-        tg.close();
+        };
+
+        // Відправляємо боту
+        tg.sendData(JSON.stringify(data));
+        
+        // Закриваємо через невелику затримку
+        setTimeout(() => {
+            tg.close();
+        }, 500);
     }
 </script>
 
