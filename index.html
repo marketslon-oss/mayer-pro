@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>План Кошторис v4.0</title>
+    <title>План Кошторис v4.1</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
@@ -25,41 +25,51 @@
             <b>Посада:</b> <span id="posada">...</span><br>
             <b>Відділ:</b> <span id="viddil">...</span>
         </div>
+
         <label>🎯 МЕТА ВІДРЯДЖЕННЯ:</label>
         <input type="text" id="purpose" placeholder="Введіть мету">
+
         <label>📍 МАРШРУТ:</label>
         <input type="text" id="destination" placeholder="Кропивницький-Київ-Кропивницький">
+
         <div class="row">
             <div><label>📅 ВИЇЗД:</label><input type="date" id="date_start" onchange="calculate()"></div>
             <div><label>📅 ПРИБУТТЯ:</label><input type="date" id="date_end" onchange="calculate()"></div>
         </div>
+
         <label>🚗 АВТОМОБІЛЬ:</label>
         <select id="car" onchange="calculate()">
             <option value="6.5">Opel Combo (KA1197MO)</option>
             <option value="8.4">Toyota Corolla (KA4730AP)</option>
             <option value="6.5">Renault Duster (KA0144РК)</option>
         </select>
+
         <div class="row">
             <div><label>🗺️ ПЛАНОВИЙ КМ:</label><input type="number" id="km" placeholder="0" oninput="calculate()"></div>
             <div><label>💰 ЦІНА ПАЛЬНОГО:</label><input type="number" id="price" placeholder="0" oninput="calculate()"></div>
         </div>
+
         <div class="row">
             <div><label>🔢 К-СТЬ ДІБ:</label><input type="text" id="days" class="gray-field" readonly></div>
             <div><label>⛽ ЛІТРИ (АВТО):</label><input type="text" id="liters" class="gray-field" readonly></div>
         </div>
+
         <div class="row">
             <div><label>💵 СУМА ПММ:</label><input type="text" id="fuel_sum" class="gray-field" readonly></div>
             <div><label>🏨 ГОТЕЛЬ:</label><input type="number" id="hotel" placeholder="0" oninput="calculate()"></div>
         </div>
+
         <label>🍔 ДОБОВІ (ЗА ВСЕ ВІДРЯДЖЕННЯ):</label>
         <input type="number" id="per_diem" placeholder="0" oninput="calculate()">
+
         <div class="total-box" id="total_display">РАЗОМ: 0 грн</div>
-        <button class="btn-save" id="main_btn" onclick="askBeforeSend()">💾 Зберегти план</button>
+        <button class="btn-save" id="main_btn" onclick="askBeforeSend()">🔍 Перевірити та відправити</button>
     </div>
 
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
+        
         const urlParams = new URLSearchParams(window.location.search);
         document.getElementById('pib').innerText = urlParams.get('pib') || 'Користувач';
         document.getElementById('posada').innerText = urlParams.get('pos') || '---';
@@ -70,18 +80,23 @@
             const km = parseFloat(document.getElementById('km').value) || 0, price = parseFloat(document.getElementById('price').value) || 0;
             const cons = parseFloat(document.getElementById('car').value) || 6.5;
             const hotel = parseFloat(document.getElementById('hotel').value) || 0, perDiem = parseFloat(document.getElementById('per_diem').value) || 0; 
+            
             let days = 0;
             if (sVal && eVal) {
                 const s = new Date(sVal), e = new Date(eVal);
                 if (!isNaN(s) && !isNaN(e) && e >= s) days = Math.ceil((e - s) / (1000 * 60 * 60 * 24)) + 1;
             }
             document.getElementById('days').value = days;
+            
             let liters = km > 0 ? (km * cons / 100).toFixed(1) : 0;
             let fuelSum = liters > 0 ? Math.round(parseFloat(liters) * price) : 0;
+            
             document.getElementById('liters').value = liters;
             document.getElementById('fuel_sum').value = fuelSum;
+            
             const total = fuelSum + hotel + perDiem;
             document.getElementById('total_display').innerText = `РАЗОМ: ${Math.round(total)} грн`;
+            
             return { total: Math.round(total), liters, fuelSum, days };
         }
 
@@ -90,17 +105,38 @@
             let missing = [];
             const fields = {
                 'purpose': 'Мета', 'destination': 'Маршрут', 'date_start': 'Виїзд', 
-                'date_end': 'Прибуття', 'km': 'КМ', 'price': 'Ціна', 'per_diem': 'Добові', 'hotel': 'Готель (0 грн)'
+                'date_end': 'Прибуття', 'km': 'КМ', 'price': 'Ціна пального', 'per_diem': 'Добові'
             };
+
             for (let id in fields) {
                 let el = document.getElementById(id);
-                if (!el.value || parseFloat(el.value) <= 0) {
+                if (!el.value || el.value == "0") {
                     missing.push(fields[id]);
                     el.style.borderColor = 'red';
                 }
             }
-            let msg = missing.length > 0 ? "⚠️ НЕ ЗАПОВНЕНО:\n• " + missing.join("\n• ") + "\n\nВсе одно відправити?" : "Зберегти план кошторис?";
-            tg.showConfirm(msg, (ok) => { if (ok) sendData(); });
+
+            const res = calculate();
+            const dest = document.getElementById('destination').value || document.getElementById('destination').placeholder;
+            const hotel = document.getElementById('hotel').value || "0";
+
+            if (missing.length > 0) {
+                tg.showConfirm("⚠️ НЕ ЗАПОВНЕНО:\n• " + missing.join("\n• ") + "\n\nВсе одно переглянути план?");
+            }
+
+            // Формируем текст предпросмотра
+            let summary = `📋 ПЕРЕВІРКА ПЛАНУ:\n` +
+                          `📍 Маршрут: ${dest}\n` +
+                          `📅 Днів: ${res.days}\n` +
+                          `⛽ ПММ: ${res.fuelSum} грн\n` +
+                          `🏨 Готель: ${hotel} грн\n` +
+                          `🍔 Добові: ${document.getElementById('per_diem').value || 0} грн\n` +
+                          `💰 РАЗОМ: ${res.total} грн\n\n` +
+                          `Надіслати цей план?`;
+
+            tg.showConfirm(summary, (ok) => {
+                if (ok) sendData();
+            });
         }
 
         function sendData() {
