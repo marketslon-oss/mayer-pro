@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>План Кошторис v4.1</title>
+    <title>План Кошторис v4.2</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
@@ -63,13 +63,13 @@
         <input type="number" id="per_diem" placeholder="0" oninput="calculate()">
 
         <div class="total-box" id="total_display">РАЗОМ: 0 грн</div>
-        <button class="btn-save" id="main_btn" onclick="askBeforeSend()">🔍 Перевірити та відправити</button>
+        <button class="btn-save" id="main_btn" onclick="askBeforeSend()">🔍 ПЕРЕВІРИТИ ТА НАДІСЛАТИ</button>
     </div>
 
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
-        
+
         const urlParams = new URLSearchParams(window.location.search);
         document.getElementById('pib').innerText = urlParams.get('pib') || 'Користувач';
         document.getElementById('posada').innerText = urlParams.get('pos') || '---';
@@ -101,11 +101,13 @@
         }
 
         function askBeforeSend() {
+            // Очищення червоних рамок
             document.querySelectorAll('input').forEach(i => i.style.borderColor = '#ccc');
+            
             let missing = [];
             const fields = {
                 'purpose': 'Мета', 'destination': 'Маршрут', 'date_start': 'Виїзд', 
-                'date_end': 'Прибуття', 'km': 'КМ', 'price': 'Ціна пального', 'per_diem': 'Добові'
+                'date_end': 'Прибуття', 'km': 'КМ', 'price': 'Ціна', 'per_diem': 'Добові'
             };
 
             for (let id in fields) {
@@ -118,28 +120,34 @@
 
             const res = calculate();
             const dest = document.getElementById('destination').value || document.getElementById('destination').placeholder;
-            const hotel = document.getElementById('hotel').value || "0";
+            const hotel = document.getElementById('hotel').value || 0;
 
-            if (missing.length > 0) {
-                tg.showConfirm("⚠️ НЕ ЗАПОВНЕНО:\n• " + missing.join("\n• ") + "\n\nВсе одно переглянути план?");
-            }
-
-            // Формируем текст предпросмотра
+            // Формуємо текст ПЕРЕГЛЯДУ
             let summary = `📋 ПЕРЕВІРКА ПЛАНУ:\n` +
                           `📍 Маршрут: ${dest}\n` +
-                          `📅 Днів: ${res.days}\n` +
-                          `⛽ ПММ: ${res.fuelSum} грн\n` +
+                          `🗓 К-сть діб: ${res.days}\n` +
+                          `⛽ Сума ПММ: ${res.fuelSum} грн\n` +
                           `🏨 Готель: ${hotel} грн\n` +
                           `🍔 Добові: ${document.getElementById('per_diem').value || 0} грн\n` +
-                          `💰 РАЗОМ: ${res.total} грн\n\n` +
-                          `Надіслати цей план?`;
+                          `💰 РАЗОМ: ${res.total} грн`;
 
+            if (missing.length > 0) {
+                summary = `⚠️ НЕ ЗАПОВНЕНО:\n• ` + missing.join("\n• ") + `\n\n` + summary;
+            }
+
+            summary += `\n\nНадіслати цей план?`;
+
+            // ТУТ МАГІЯ: Показуємо зведений звіт
             tg.showConfirm(summary, (ok) => {
                 if (ok) sendData();
             });
         }
 
         function sendData() {
+            const btn = document.getElementById('main_btn');
+            btn.disabled = true;
+            btn.innerText = "⏳ Відправка...";
+            
             const res = calculate();
             const data = {
                 type: 'plan_new',
