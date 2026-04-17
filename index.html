@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>План Кошторис v3.6</title> 
+    <title>План Кошторис v3.7</title> 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
@@ -113,11 +113,12 @@
         }
 
         function askBeforeSend() {
-            // Очищення попередніх помилок
+            // Очищення попередніх червоних рамок
             document.querySelectorAll('input').forEach(i => i.style.borderColor = '#ccc');
 
             const purpose = document.getElementById('purpose').value.trim();
             const destinationField = document.getElementById('destination');
+            const destination = destinationField.value.trim();
             const km = document.getElementById('km').value;
             const price = document.getElementById('price').value;
             const perDiem = document.getElementById('per_diem').value;
@@ -127,16 +128,18 @@
             let missing = [];
             
             if (!purpose) { missing.push("Мета"); document.getElementById('purpose').style.borderColor = 'red'; }
+            if (!destination) { missing.push("Маршрут"); document.getElementById('destination').style.borderColor = 'red'; }
+            if (!sDate) { missing.push("Дата виїзду"); document.getElementById('date_start').style.borderColor = 'red'; }
+            if (!eDate) { missing.push("Дата прибуття"); document.getElementById('date_end').style.borderColor = 'red'; }
             if (!km || parseFloat(km) <= 0) { missing.push("КМ"); document.getElementById('km').style.borderColor = 'red'; }
             if (!price || parseFloat(price) <= 0) { missing.push("Ціна пального"); document.getElementById('price').style.borderColor = 'red'; }
             if (!perDiem || parseFloat(perDiem) <= 0) { missing.push("Добові"); document.getElementById('per_diem').style.borderColor = 'red'; }
-            if (!sDate || !eDate) { missing.push("Дати поїздки"); }
 
-            const finalDest = destinationField.value.trim() || destinationField.placeholder;
+            const finalDest = destination || destinationField.placeholder;
 
             let message = "Зберегти план кошторис?";
             if (missing.length > 0) {
-                message = "⚠️ НЕ ЗАПОВНЕНО:\n• " + missing.join("\n• ") + "\n\nВсе одно відправити?";
+                message = "⚠️ УВАГА! НЕ ЗАПОВНЕНО:\n• " + missing.join("\n• ") + "\n\nВсе одно відправити?";
             }
 
             tg.showConfirm(message, function(ok) {
