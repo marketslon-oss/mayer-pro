@@ -3,36 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mayer Report v12.1</title>
+    <title>Маршрутний лист v5.2</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
         #loading_layer { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; position: fixed; top: 0; left: 0; width: 100%; background: #f4f4f4; z-index: 9999; }
         .loader_spin { width: 45px; height: 45px; border: 5px solid #ddd; border-top: 5px solid #71a95e; border-radius: 50%; animation: spin_f 0.8s linear infinite; margin-bottom: 15px; }
         @keyframes spin_f { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
         .report_card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: none; }
-        .user-header { background: #f1f1f1; padding: 10px; border-radius: 10px; margin-bottom: 10px; font-size: 12px; border-left: 5px solid #71a95e; }
-        .row { display: flex; gap: 8px; align-items: flex-end; margin-bottom: 10px; }
-        .row > div { flex: 1; display: flex; flex-direction: column; }
-        label { display: block; font-weight: bold; font-size: 9px; color: #555; text-transform: uppercase; margin-bottom: 4px; }
-        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
-        .gray_box { background: #f9f9f9; color: #444; font-weight: bold; border: 1px dashed #bbb; }
-        .section_frame { padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #ddd; }
-        .odo_bg { background: #fdf2f2; border-color: #f5c6cb; }
-        .fuel_bg { background: #fffde7; border-color: #fff59d; }
         
-        .balance_container { background: #eef7ee; padding: 12px; border-radius: 10px; border: 1px solid #c3e6cb; margin-bottom: 15px; }
-        .bal_part { flex: 1; text-align: center; }
-        .bal_val { font-size: 18px; font-weight: bold; margin-top: 2px; }
+        /* Та сама шапка, що і у звіті */
+        .user-header { background: #f1f1f1; padding: 10px; border-radius: 10px; margin-bottom: 15px; font-size: 12px; border-left: 5px solid #71a95e; }
         
-        .total_summary { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; padding: 12px; border-radius: 8px; text-align: center; margin-top: 10px; font-weight: bold; font-size: 18px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background: #f8f8f8; font-size: 10px; text-transform: uppercase; color: #666; }
         
-        .btn_up { background: #5d8aa8; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 11px; font-weight: bold; width: 100%; cursor: pointer; text-align: center; }
-        .btn_submit { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; cursor: pointer; }
+        input { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        
+        .btn_add { background: #5d8aa8; color: white; border: none; padding: 10px 15px; border-radius: 8px; margin-top: 12px; cursor: pointer; font-weight: bold; font-size: 12px; }
+        .btn_submit { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 20px; cursor: pointer; }
+        
+        .total_box { background: #fffde7; border: 1px solid #fff59d; padding: 12px; border-radius: 8px; text-align: right; margin-top: 15px; font-weight: bold; font-size: 16px; color: #856404; }
+        .remove-btn { color: #d9534f; cursor: pointer; font-weight: bold; text-align: center; font-size: 18px; }
     </style>
 </head>
 <body>
-    <div id="loading_layer"><div class="loader_spin"></div><div style="color: #666;">Отримання даних...</div></div>
+    <div id="loading_layer"><div class="loader_spin"></div><div style="color: #666;">Завантаження маршруту...</div></div>
 
     <div class="report_card" id="form_content">
         <div class="user-header">
@@ -41,191 +39,120 @@
             <b>№ Поїздки:</b> <span id="view_trip" style="color:#d9534f; font-weight: bold;">...</span>
         </div>
 
-        <div class="row"><div><label>🎯 МЕТА</label><input type="text" id="in_purpose" class="gray_box" readonly></div></div>
-        <div class="row"><div><label>📍 МАРШРУТ</label><input type="text" id="in_dest" class="gray_box" readonly></div></div>
+        <div style="font-size: 11px; font-weight: bold; color: #555; margin-bottom: 5px;">📍 ДЕТАЛІЗАЦІЯ МАРШРУТУ</div>
+        
+        <table id="route_table">
+            <thead>
+                <tr>
+                    <th>Звідки — Куди</th>
+                    <th style="width: 80px;">КМ</th>
+                    <th style="width: 30px;"></th>
+                </tr>
+            </thead>
+            <tbody id="route_body">
+                </tbody>
+        </table>
 
-        <div class="row">
-            <div><label>📅 ВИЇЗД</label><input type="text" id="in_start" class="gray_box" readonly></div>
-            <div><label>📅 ПРИБУТТЯ</label><input type="text" id="in_end" class="gray_box" readonly></div>
-            <div style="flex:0.4;"><label>🔢 ДІБ</label><input type="text" id="in_days" class="gray_box" readonly></div>
+        <button class="btn_add" onclick="addRow()">➕ ДОДАТИ ТОЧКУ</button>
+
+        <div class="total_box">
+            ЗАГАЛЬНИЙ ПРОБІГ: <span id="total_km">0</span> км
         </div>
 
-        <div class="section_frame odo_bg">
-            <div class="row">
-                <div><label>📟 ОДОМЕТР ВИЇЗД</label><input type="text" id="in_os" class="gray_box" readonly></div>
-                <div><label>🏁 ОДОМЕТР ПРИБУТТЯ</label><input type="text" id="in_oe" class="gray_box" readonly></div>
-            </div>
-            <div class="row" style="margin-top:5px;">
-                <div><label>🗺️ ПЛАН КМ</label><input type="text" id="in_plan_km" class="gray_box" readonly></div>
-                <div><label>📏 ФАКТ КМ</label><input type="text" id="in_fact_km" class="gray_box" readonly style="color: #d9534f;"></div>
-            </div>
-        </div>
-
-        <div class="section_frame fuel_bg">
-            <div class="row">
-                <div><label>⛽ ЗАЛИШОК ВИЇЗД (Л)</label><input type="number" id="fuel_start" placeholder="0"></div>
-                <div><label>⛽ ЗАЛИШОК ПРИБУТТЯ (Л)</label><input type="number" id="fuel_end" placeholder="0"></div>
-            </div>
-            <div class="row" style="margin-top:5px;">
-                <div><label>⛽ ПЛАН ЛІТРИ</label><input type="text" id="in_plan_fuel" class="gray_box" readonly></div>
-                <div><label>⛽ ФАКТ ЛІТРИ</label><input type="text" id="in_fact_fuel" class="gray_box" readonly style="color: #d9534f;"></div>
-            </div>
-            <div class="row" style="margin-top:5px;">
-                <div><label>💰 ПЛАН ПАЛИВО (ГРН)</label><input type="text" id="in_plan_fuel_sum" class="gray_box" readonly></div>
-                <div><label>💰 ФАКТ ПАЛИВО (ГРН)</label><input type="text" id="in_fact_fuel_sum" class="gray_box" readonly style="color: #d9534f;"></div>
-            </div>
-        </div>
-
-        <div class="row">
-            <div><label>🏨 ПРОЖИВАННЯ</label><input type="number" id="in_hotel" oninput="doCalc()"></div>
-            <div><label>🍔 ДОБОВІ</label><input type="number" id="in_diem" oninput="doCalc()"></div>
-        </div>
-        <div class="row">
-            <div><label>🚌 ТРАНСПОРТ (ГРОМ.)</label><input type="number" id="in_trans" placeholder="0" oninput="doCalc()"></div>
-            <div><label>🛠️ ДОДАТКОВІ ВИТРАТИ</label><input type="number" id="in_extra" placeholder="0" oninput="doCalc()"></div>
-        </div>
-
-        <div style="margin-bottom:10px;"><label>📝 ПРИМІТКА</label><input type="text" id="in_comm" placeholder="Опишіть витрати..."></div>
-
-        <div class="balance_container">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div class="bal_part"><label>💰 ОТРИМАНО (ПЛАН)</label><div id="val_rec" class="bal_val">0</div></div>
-                <div style="width: 1px; height: 35px; background: #c3e6cb; margin: 0 5px;"></div>
-                <div class="bal_part"><label>📉 ФАКТ ВИТРАТИ</label><div id="val_total_spent" class="bal_val">0</div></div>
-            </div>
-            <div style="width: 100%; height: 1px; background: #c3e6cb; margin: 8px 0;"></div>
-            <div style="text-align: center;">
-                <label>⚖️ РІЗНИЦЯ (ЗАЛИШОК)</label>
-                <div id="val_bal" class="bal_val">0</div>
-            </div>
-        </div>
-
-        <div class="total_summary" id="total_out">ВСЬОГО ВИТРАЧЕНО: 0 грн</div>
-
-        <div class="row" style="margin-top:15px;">
-            <div><button type="button" class="btn_up" onclick="document.getElementById('f_doc').click()">📁 ФАЙЛ</button><input type="file" id="f_doc" style="display:none"></div>
-            <div><button type="button" class="btn_up" onclick="document.getElementById('f_img').click()">📷 ФОТО</button><input type="file" id="f_img" accept="image/*" capture="camera" style="display:none"></div>
-        </div>
-        <button class="btn_submit" onclick="askBeforeSend()">💾 Надіслати звіт</button>
+        <button class="btn_submit" onclick="askBeforeSend()">💾 ЗБЕРЕГТИ МАРШРУТ</button>
     </div>
 
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
         const p = new URLSearchParams(window.location.search);
-        function fix(v) { return (!v || v === "0" || v === "null") ? "" : v; }
 
         window.onload = () => {
+            // Заповнюємо шапку з параметрів URL
             document.getElementById('view_pib').innerText = p.get('pib') || '---';
             document.getElementById('view_pos').innerText = p.get('posada') || '---';
             document.getElementById('view_vid').innerText = p.get('viddil') || '---';
             document.getElementById('view_trip').innerText = p.get('trip_id') || '---';
-            
-            document.getElementById('in_purpose').value = p.get('purpose') || '';
-            document.getElementById('in_dest').value = p.get('dest') || '';
-            document.getElementById('in_start').value = p.get('start') || '';
-            document.getElementById('in_end').value = p.get('end') || '';
-            document.getElementById('in_days').value = fix(p.get('days'));
-            document.getElementById('in_plan_km').value = fix(p.get('plan_km'));
-            document.getElementById('in_plan_fuel').value = fix(p.get('plan_fuel'));
-            document.getElementById('in_plan_fuel_sum').value = fix(p.get('plan_fuel_sum'));
-            
-            document.getElementById('in_hotel').value = fix(p.get('plan_hotel'));
-            document.getElementById('in_diem').value = fix(p.get('plan_diem'));
-            
-            document.getElementById('in_os').value = fix(p.get('o_start'));
-            document.getElementById('in_oe').value = fix(p.get('o_end'));
-            
-            let km = (parseFloat(p.get('o_end')) || 0) - (parseFloat(p.get('o_start')) || 0);
-            document.getElementById('in_fact_km').value = km > 0 ? km.toFixed(0) : "0";
-            document.getElementById('in_fact_fuel').value = fix(p.get('f_liters')) || "0";
-            document.getElementById('in_fact_fuel_sum').value = fix(p.get('f_money')) || "0";
-            
-            document.getElementById('fuel_start').value = fix(p.get('fuel_start_res'));
-            document.getElementById('fuel_end').value = fix(p.get('fuel_end_res'));
 
-            document.getElementById('val_rec').innerText = p.get('money_received') || "0";
-            
-            doCalc();
+            // Додаємо перший рядок автоматично
+            addRow();
+
             document.getElementById('loading_layer').style.display = 'none';
             document.getElementById('form_content').style.display = 'block';
         };
 
-        function doCalc() {
-            const h = parseFloat(document.getElementById('in_hotel').value) || 0;
-            const d = parseFloat(document.getElementById('in_diem').value) || 0;
-            const t = parseFloat(document.getElementById('in_trans').value) || 0;
-            const e = parseFloat(document.getElementById('in_extra').value) || 0;
-            
-            let f_fact = parseFloat(document.getElementById('in_fact_fuel_sum').value) || 0;
-            if (f_fact === 0) {
-                f_fact = parseFloat(document.getElementById('in_plan_fuel_sum').value) || 0;
+        function addRow() {
+            const tbody = document.getElementById('route_body');
+            const row = tbody.insertRow();
+            row.innerHTML = `
+                <td><input type="text" class="in-path" placeholder="напр. Київ - Обухів"></td>
+                <td><input type="number" class="in-km" placeholder="0" oninput="calculateTotal()"></td>
+                <td class="remove-btn" onclick="removeRow(this)">×</td>
+            `;
+        }
+
+        function removeRow(btn) {
+            const row = btn.parentNode.parentNode;
+            if (document.querySelectorAll('#route_body tr').length > 1) {
+                row.remove();
+                calculateTotal();
             }
-            
-            const received = parseFloat(document.getElementById('val_rec').innerText) || 0;
-            const totalSpent = h + d + t + e + f_fact;
-            
-            document.getElementById('val_total_spent').innerText = totalSpent.toFixed(0);
-            document.getElementById('total_out').innerText = `ВСЬОГО ВИТРАЧЕНО: ${totalSpent.toFixed(0)} грн`;
-            
-            const balance = received - totalSpent;
-            const bEl = document.getElementById('val_bal');
-            bEl.innerText = balance.toFixed(0);
-            
-            if (balance < 0) {
-                bEl.style.color = "#d9534f";
-                document.getElementById('total_out').style.background = "#f8d7da";
-                document.getElementById('total_out').style.color = "#721c24";
-            } else {
-                bEl.style.color = "#2e7d32";
-                document.getElementById('total_out').style.background = "#d4edda";
-                document.getElementById('total_out').style.color = "#155724";
-            }
-            return { totalSpent, balance };
+        }
+
+        function calculateTotal() {
+            let total = 0;
+            document.querySelectorAll('.in-km').forEach(el => {
+                total += parseFloat(el.value) || 0;
+            });
+            document.getElementById('total_km').innerText = total.toFixed(0);
+            return total;
         }
 
         function askBeforeSend() {
-            const res = doCalc();
+            const total = calculateTotal();
             const tripId = document.getElementById('view_trip').innerText;
-            const km = document.getElementById('in_fact_km').value;
-            const fuelSum = document.getElementById('in_fact_fuel_sum').value || document.getElementById('in_plan_fuel_sum').value;
-            const hotel = document.getElementById('in_hotel').value || 0;
-            const diem = document.getElementById('in_diem').value || 0;
-            const extra = parseFloat(document.getElementById('in_trans').value || 0) + parseFloat(document.getElementById('in_extra').value || 0);
+            const rows = document.querySelectorAll('#route_body tr');
+            
+            let routeSummary = "";
+            let dataList = [];
+            let isError = false;
 
-            let summary = `📋 ПЕРЕВІРКА ЗВІТУ №${tripId}\n` +
-                          `──────────────────\n` +
-                          `🛣️ Пробіг: ${km} км\n` +
-                          `⛽ ПММ: ${fuelSum} грн\n` +
-                          `🏨 Готель: ${hotel} грн\n` +
-                          `🍔 Добові: ${diem} грн\n` +
-                          `🛠️ Додатково: ${extra} грн\n` +
-                          `──────────────────\n` +
-                          `📈 ВИТРАЧЕНО: ${res.totalSpent.toFixed(0)} грн\n` +
-                          `⚖️ ЗАЛИШОК: ${res.balance.toFixed(0)} грн\n\n` +
-                          `Надіслати цей звіт?`;
-
-            tg.showConfirm(summary, (ok) => {
-                if (ok) sendReport();
+            rows.forEach((row, i) => {
+                const path = row.querySelector('.in-path').value;
+                const km = row.querySelector('.in-km').value;
+                
+                if (!path || !km) {
+                    isError = true;
+                    row.querySelector('.in-path').style.borderColor = 'red';
+                }
+                
+                routeSummary += `${i+1}. ${path} — ${km} км\n`;
+                dataList.push(`${path} (${km} км)`);
             });
-        }
 
-        function sendReport() {
-            const finalSpent = document.getElementById('val_total_spent').innerText;
-            tg.sendData(JSON.stringify({
-                type: "report_update",
-                trip_id: p.get('trip_id'),
-                hotel: document.getElementById('in_hotel').value || "0",
-                diem: document.getElementById('in_diem').value || "0",
-                trans: document.getElementById('in_trans').value || "0",
-                extra: document.getElementById('in_extra').value || "0",
-                fuel_start: document.getElementById('fuel_start').value || "0",
-                fuel_end: document.getElementById('fuel_end').value || "0",
-                fuel_fact_sum: document.getElementById('in_fact_fuel_sum').value || "0",
-                comment: document.getElementById('in_comm').value || "",
-                total: finalSpent
-            }));
-            tg.close();
+            if (isError) {
+                tg.showAlert("⚠️ Заповніть усі поля маршруту!");
+                return;
+            }
+
+            let confirmMsg = `📋 ПЕРЕВІРКА МАРШРУТУ №${tripId}\n` +
+                             `──────────────────\n` +
+                             routeSummary +
+                             `──────────────────\n` +
+                             `🏁 РАЗОМ: ${total} км\n\n` +
+                             `Зберегти дані?`;
+
+            tg.showConfirm(confirmMsg, (ok) => {
+                if (ok) {
+                    tg.sendData(JSON.stringify({
+                        type: "route_list_save",
+                        trip_id: p.get('trip_id'),
+                        route_details: dataList.join(" | "),
+                        total_km: total.toString()
+                    }));
+                    tg.close();
+                }
+            });
         }
     </script>
 </body>
