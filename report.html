@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mayer Report v13.2</title>
+    <title>Mayer Report v13.3</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
@@ -23,30 +23,24 @@
         .balance_container { background: #eef7ee; padding: 12px; border-radius: 10px; border: 1px solid #c3e6cb; margin-bottom: 15px; }
         .bal_part { flex: 1; text-align: center; }
         .bal_val { font-size: 18px; font-weight: bold; margin-top: 2px; }
-        .total_summary { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; padding: 12px; border-radius: 8px; text-align: center; margin-top: 10px; font-weight: bold; font-size: 18px; }
-        .btn_up { background: #5d8aa8; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 11px; font-weight: bold; width: 100%; cursor: pointer; text-align: center; }
         .btn_submit { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; cursor: pointer; }
     </style>
 </head>
 <body>
-    <div id="loading_layer"><div class="loader_spin"></div><div style="color: #666;">Отримання даних...</div></div>
+    <div id="loading_layer"><div class="loader_spin"></div><div>Отримання даних...</div></div>
 
     <div class="report_card" id="form_content">
         <div class="user-header">
             <b>ПІБ:</b> <span id="view_pib">...</span><br>
-            <b>Посада:</b> <span id="view_pos">...</span> | <b>Відділ:</b> <span id="view_vid">...</span><br>
             <b>№ Поїздки:</b> <span id="view_trip" style="color:#d9534f; font-weight: bold;">...</span>
         </div>
-
-        <div class="row"><div><label>🎯 МЕТА</label><input type="text" id="in_purpose" class="gray_box" readonly></div></div>
-        <div class="row"><div><label>📍 МАРШРУТ</label><input type="text" id="in_dest" class="gray_box" readonly></div></div>
 
         <div class="section_frame odo_bg">
             <div class="row">
                 <div><label>📟 ОДОМЕТР ВИЇЗД</label><input type="text" id="in_os" class="gray_box" readonly></div>
                 <div><label>🏁 ОДОМЕТР ПРИБУТТЯ</label><input type="text" id="in_oe" class="gray_box" readonly></div>
             </div>
-            <div class="row" style="margin-top:5px;">
+            <div class="row">
                 <div><label>📏 ФАКТ КМ</label><input type="text" id="in_fact_km" class="gray_box" readonly style="color: #d9534f;"></div>
             </div>
         </div>
@@ -56,7 +50,7 @@
                 <div><label>⛽ ЗАЛИШОК ВИЇЗД (Л)</label><input type="number" id="fuel_start" placeholder="0"></div>
                 <div><label>⛽ ЗАЛИШОК ПРИБУТТЯ (Л)</label><input type="number" id="fuel_end" placeholder="0"></div>
             </div>
-            <div class="row" style="margin-top:5px;">
+            <div class="row">
                 <div><label>💰 ФАКТ ПАЛИВО (ГРН)</label><input type="number" id="in_fact_fuel_sum" placeholder="0" oninput="doCalc()"></div>
             </div>
         </div>
@@ -67,17 +61,16 @@
         </div>
 
         <div class="balance_container">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; justify-content: space-between;">
                 <div class="bal_part"><label>💰 ОТРИМАНО</label><div id="val_rec" class="bal_val">0</div></div>
                 <div class="bal_part"><label>📉 ВИТРАТИ</label><div id="val_total_spent" class="bal_val">0</div></div>
             </div>
-            <div style="text-align: center; margin-top: 10px;">
-                <label>⚖️ ЗАЛИШОК</label>
-                <div id="val_bal" class="bal_val">0</div>
+            <div style="text-align: center; margin-top: 10px; border-top: 1px solid #c3e6cb; padding-top: 5px;">
+                <label>⚖️ ЗАЛИШОК</label><div id="val_bal" class="bal_val">0</div>
             </div>
         </div>
 
-        <button class="btn_submit" id="main_btn" onclick="askBeforeSend()">💾 Перевірити та надіслати</button>
+        <button class="btn_submit" onclick="askBeforeSend()">💾 ПЕРЕВІРИТИ ТА НАДІСЛАТИ</button>
     </div>
 
     <script>
@@ -86,18 +79,20 @@
         const p = new URLSearchParams(window.location.search);
 
         window.onload = () => {
-            document.getElementById('view_pib').innerText = p.get('pib') || '---';
-            document.getElementById('view_trip').innerText = p.get('trip_id') || '---';
-            document.getElementById('in_os').value = p.get('o_start') || '0';
-            document.getElementById('in_oe').value = p.get('o_end') || '0';
-            document.getElementById('val_rec').innerText = p.get('money_received') || "0";
-            
-            let km = (parseFloat(p.get('o_end')) || 0) - (parseFloat(p.get('o_start')) || 0);
-            document.getElementById('in_fact_km').value = km > 0 ? km : "0";
+            try {
+                document.getElementById('view_pib').innerText = p.get('pib') || '---';
+                document.getElementById('view_trip').innerText = p.get('trip_id') || '---';
+                document.getElementById('in_os').value = p.get('o_start') || '0';
+                document.getElementById('in_oe').value = p.get('o_end') || '0';
+                document.getElementById('val_rec').innerText = p.get('money_received') || "0";
+                
+                let km = (parseFloat(p.get('o_end')) || 0) - (parseFloat(p.get('o_start')) || 0);
+                document.getElementById('in_fact_km').value = km > 0 ? km : "0";
 
-            document.getElementById('loading_layer').style.display = 'none';
-            document.getElementById('form_content').style.display = 'block';
-            doCalc();
+                document.getElementById('loading_layer').style.display = 'none';
+                document.getElementById('form_content').style.display = 'block';
+                doCalc();
+            } catch (e) { console.error("Помилка завантаження:", e); }
         };
 
         function doCalc() {
@@ -113,54 +108,47 @@
             const bEl = document.getElementById('val_bal');
             bEl.innerText = bal;
             bEl.style.color = bal < 0 ? "red" : "green";
-            
             return { spent, bal };
         }
 
         function askBeforeSend() {
-            // Очищення рамок
-            document.querySelectorAll('input').forEach(i => i.style.borderColor = '#ccc');
-            
-            let missing = [];
-            if (!document.getElementById('fuel_start').value) missing.push("Залишок виїзд");
-            if (!document.getElementById('fuel_end').value) missing.push("Залишок прибуття");
+            try {
+                document.querySelectorAll('input').forEach(i => i.style.borderColor = '#ccc');
+                let missing = [];
+                
+                const fuelS = document.getElementById('fuel_start').value;
+                const fuelE = document.getElementById('fuel_end').value;
 
-            const res = doCalc();
-            let summary = `📋 ПЕРЕВІРКА ЗВІТУ\n` +
-                          `🛣️ Пробіг: ${document.getElementById('in_fact_km').value} км\n` +
-                          `⛽ Пальне: ${document.getElementById('in_fact_fuel_sum').value || 0} грн\n` +
-                          `🏨 Готель: ${document.getElementById('in_hotel').value || 0} грн\n` +
-                          `🍔 Добові: ${document.getElementById('in_diem').value || 0} грн\n` +
-                          `──────────────────\n` +
-                          `📉 Всього: ${res.spent} грн\n` +
-                          `⚖️ Залишок: ${res.bal} грн`;
+                if (!fuelS) { missing.push("Залишок виїзд"); document.getElementById('fuel_start').style.borderColor = 'red'; }
+                if (!fuelE) { missing.push("Залишок прибуття"); document.getElementById('fuel_end').style.borderColor = 'red'; }
 
-            if (missing.length > 0) {
-                summary = `⚠️ НЕ ЗАПОВНЕНО:\n• ` + missing.join("\n• ") + `\n\n` + summary;
-                missing.forEach(id => {
-                    // підсвітка (спрощено)
-                    if(id.includes("виїзд")) document.getElementById('fuel_start').style.borderColor = 'red';
-                    if(id.includes("прибуття")) document.getElementById('fuel_end').style.borderColor = 'red';
+                const res = doCalc();
+                let summary = `📋 ЗВІТ №${document.getElementById('view_trip').innerText}\n` +
+                              `🛣️ Пробіг: ${document.getElementById('in_fact_km').value} км\n` +
+                              `⛽ Пальне: ${document.getElementById('in_fact_fuel_sum').value || 0} грн\n` +
+                              `📉 Витрати: ${res.spent} грн\n` +
+                              `⚖️ Залишок: ${res.bal} грн`;
+
+                if (missing.length > 0) {
+                    summary = `⚠️ НЕ ЗАПОВНЕНО:\n• ` + missing.join("\n• ") + `\n\n` + summary;
+                }
+
+                tg.showConfirm(summary + `\n\nНадіслати звіт?`, (ok) => {
+                    if (ok) {
+                        tg.sendData(JSON.stringify({
+                            type: "report_update",
+                            trip_id: p.get('trip_id'),
+                            fuel_start: document.getElementById('fuel_start').value || "0",
+                            fuel_end: document.getElementById('fuel_end').value || "0",
+                            fuel_fact_sum: document.getElementById('in_fact_fuel_sum').value || "0",
+                            hotel: document.getElementById('in_hotel').value || "0",
+                            diem: document.getElementById('in_diem').value || "0",
+                            total: res.spent.toString()
+                        }));
+                        tg.close();
+                    }
                 });
-            }
-
-            tg.showConfirm(summary + `\n\nНадіслати?`, (ok) => {
-                if (ok) sendReport();
-            });
-        }
-
-        function sendReport() {
-            tg.sendData(JSON.stringify({
-                type: "report_update",
-                trip_id: p.get('trip_id'),
-                fuel_start: document.getElementById('fuel_start').value || "0",
-                fuel_end: document.getElementById('fuel_end').value || "0",
-                fuel_fact_sum: document.getElementById('in_fact_fuel_sum').value || "0",
-                hotel: document.getElementById('in_hotel').value || "0",
-                diem: document.getElementById('in_diem').value || "0",
-                total: document.getElementById('val_total_spent').innerText
-            }));
-            tg.close();
+            } catch (e) { alert("Помилка відправки: " + e); }
         }
     </script>
 </body>
