@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mayer Report v13.0</title>
+    <title>Mayer Report v13.1</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
@@ -179,9 +179,7 @@
         }
 
         function askBeforeSend() {
-            // Очищення червоних рамок
             document.querySelectorAll('input').forEach(i => i.style.borderColor = '#ccc');
-            
             let missing = [];
             const fuel_s = document.getElementById('fuel_start').value;
             const fuel_e = document.getElementById('fuel_end').value;
@@ -195,15 +193,25 @@
 
             const res = doCalc();
             const trip_id = document.getElementById('view_trip').innerText;
+            const fact_km = document.getElementById('in_fact_km').value;
+            const fact_fuel = document.getElementById('in_fact_fuel').value;
+            const fact_money = document.getElementById('in_fact_fuel_sum').value;
 
             let summary = `📋 ПЕРЕВІРКА ЗВІТУ №${trip_id}\n` +
-                          `📉 Витрачено: ${res.totalSpent.toFixed(0)} грн\n` +
-                          `⚖️ Залишок: ${res.balance.toFixed(0)} грн\n`;
+                          `──────────────────\n` +
+                          `🛣️ Пробіг факт: ${fact_km} км\n` +
+                          `⛽ Пальне: ${fact_fuel} л / ${fact_money} грн\n` +
+                          `🏨 Готель: ${hotel || 0} грн\n` +
+                          `🍔 Добові: ${diem || 0} грн\n` +
+                          `➕ Додатково: ${parseFloat(document.getElementById('in_trans').value || 0) + parseFloat(document.getElementById('in_extra').value || 0)} грн\n` +
+                          `──────────────────\n` +
+                          `📉 ВСЬОГО ВИТРАТИ: ${res.totalSpent.toFixed(0)} грн\n` +
+                          `⚖️ ВАШ ЗАЛИШОК: ${res.balance.toFixed(0)} грн\n`;
 
             if (missing.length > 0) {
                 summary = `⚠️ НЕ ЗАПОВНЕНО:\n• ` + missing.join("\n• ") + `\n\n` + summary;
             }
-            summary += `\nНадіслати звіт?`;
+            summary += `\nНадіслати цей звіт?`;
 
             tg.showConfirm(summary, (ok) => { if (ok) sendReport(); });
         }
