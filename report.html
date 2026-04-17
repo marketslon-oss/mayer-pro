@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mayer Report v12.0</title>
+    <title>Mayer Report v13.0</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
@@ -15,18 +15,15 @@
         .row { display: flex; gap: 8px; align-items: flex-end; margin-bottom: 10px; }
         .row > div { flex: 1; display: flex; flex-direction: column; }
         label { display: block; font-weight: bold; font-size: 9px; color: #555; text-transform: uppercase; margin-bottom: 4px; }
-        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 14px; transition: border 0.3s; }
         .gray_box { background: #f9f9f9; color: #444; font-weight: bold; border: 1px dashed #bbb; }
         .section_frame { padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #ddd; }
         .odo_bg { background: #fdf2f2; border-color: #f5c6cb; }
         .fuel_bg { background: #fffde7; border-color: #fff59d; }
-        
         .balance_container { background: #eef7ee; padding: 12px; border-radius: 10px; border: 1px solid #c3e6cb; margin-bottom: 15px; }
         .bal_part { flex: 1; text-align: center; }
         .bal_val { font-size: 18px; font-weight: bold; margin-top: 2px; }
-        
         .total_summary { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; padding: 12px; border-radius: 8px; text-align: center; margin-top: 10px; font-weight: bold; font-size: 18px; }
-        
         .btn_up { background: #5d8aa8; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 11px; font-weight: bold; width: 100%; cursor: pointer; text-align: center; }
         .btn_submit { width: 100%; padding: 15px; background: #71a95e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; }
     </style>
@@ -106,7 +103,7 @@
             <div><button type="button" class="btn_up" onclick="document.getElementById('f_doc').click()">📁 ФАЙЛ</button><input type="file" id="f_doc" style="display:none"></div>
             <div><button type="button" class="btn_up" onclick="document.getElementById('f_img').click()">📷 ФОТО</button><input type="file" id="f_img" accept="image/*" capture="camera" style="display:none"></div>
         </div>
-        <button class="btn_submit" onclick="sendReport()">💾 Надіслати звіт</button>
+        <button class="btn_submit" onclick="askBeforeSend()">💾 Перевірити та надіслати</button>
     </div>
 
     <script>
@@ -141,7 +138,6 @@
             document.getElementById('in_fact_fuel').value = fix(p.get('f_liters')) || "0";
             document.getElementById('in_fact_fuel_sum').value = fix(p.get('f_money')) || "0";
             
-            // НОВЕ: ПІДСТАНОВКА ФАКТИЧНИХ ЗАЛИШКІВ З ЖУРНАЛУ (L та M)
             document.getElementById('fuel_start').value = fix(p.get('fuel_start_res'));
             document.getElementById('fuel_end').value = fix(p.get('fuel_end_res'));
 
@@ -157,12 +153,8 @@
             const d = parseFloat(document.getElementById('in_diem').value) || 0;
             const t = parseFloat(document.getElementById('in_trans').value) || 0;
             const e = parseFloat(document.getElementById('in_extra').value) || 0;
-            
             let f_fact = parseFloat(document.getElementById('in_fact_fuel_sum').value) || 0;
-            
-            if (f_fact === 0) {
-                f_fact = parseFloat(document.getElementById('in_plan_fuel_sum').value) || 0;
-            }
+            if (f_fact === 0) { f_fact = parseFloat(document.getElementById('in_plan_fuel_sum').value) || 0; }
             
             const received = parseFloat(document.getElementById('val_rec').innerText) || 0;
             const totalSpent = h + d + t + e + f_fact;
@@ -183,6 +175,37 @@
                 document.getElementById('total_out').style.background = "#d4edda";
                 document.getElementById('total_out').style.color = "#155724";
             }
+            return { totalSpent, balance };
+        }
+
+        function askBeforeSend() {
+            // Очищення червоних рамок
+            document.querySelectorAll('input').forEach(i => i.style.borderColor = '#ccc');
+            
+            let missing = [];
+            const fuel_s = document.getElementById('fuel_start').value;
+            const fuel_e = document.getElementById('fuel_end').value;
+            const hotel = document.getElementById('in_hotel').value;
+            const diem = document.getElementById('in_diem').value;
+
+            if (!fuel_s) { missing.push("Залишок виїзд"); document.getElementById('fuel_start').style.borderColor = 'red'; }
+            if (!fuel_e) { missing.push("Залишок прибуття"); document.getElementById('fuel_end').style.borderColor = 'red'; }
+            if (!hotel) { missing.push("Готель"); document.getElementById('in_hotel').style.borderColor = 'red'; }
+            if (!diem) { missing.push("Добові"); document.getElementById('in_diem').style.borderColor = 'red'; }
+
+            const res = doCalc();
+            const trip_id = document.getElementById('view_trip').innerText;
+
+            let summary = `📋 ПЕРЕВІРКА ЗВІТУ №${trip_id}\n` +
+                          `📉 Витрачено: ${res.totalSpent.toFixed(0)} грн\n` +
+                          `⚖️ Залишок: ${res.balance.toFixed(0)} грн\n`;
+
+            if (missing.length > 0) {
+                summary = `⚠️ НЕ ЗАПОВНЕНО:\n• ` + missing.join("\n• ") + `\n\n` + summary;
+            }
+            summary += `\nНадіслати звіт?`;
+
+            tg.showConfirm(summary, (ok) => { if (ok) sendReport(); });
         }
 
         function sendReport() {
