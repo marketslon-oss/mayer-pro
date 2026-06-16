@@ -101,7 +101,6 @@
         }
 
         function askBeforeSend() {
-            // Очищення червоних рамок
             document.querySelectorAll('input').forEach(i => i.style.borderColor = '#ccc');
             
             let missing = [];
@@ -122,7 +121,6 @@
             const dest = document.getElementById('destination').value || document.getElementById('destination').placeholder;
             const hotel = document.getElementById('hotel').value || 0;
 
-            // Формуємо текст ПЕРЕГЛЯДУ
             let summary = `📋 ПЕРЕВІРКА ПЛАНУ:\n` +
                           `📍 Маршрут: ${dest}\n` +
                           `🗓 К-сть діб: ${res.days}\n` +
@@ -137,7 +135,6 @@
 
             summary += `\n\nНадіслати цей план?`;
 
-            // ТУТ МАГІЯ: Показуємо зведений звіт
             tg.showConfirm(summary, (ok) => {
                 if (ok) sendData();
             });
@@ -159,6 +156,7 @@
                 car: document.getElementById('car').options[document.getElementById('car').selectedIndex].text,
                 km: document.getElementById('km').value || "0",
                 price: document.getElementById('price').value || "0",
+                days: res.days.toString(), // <--- ОСЬ ЦЕЙ РЯДОК ВИРІШУЄ ВСЕ
                 fuel_sum: res.fuelSum.toString(),
                 hotel: document.getElementById('hotel').value || "0",
                 per_diem: document.getElementById('per_diem').value || "0",
