@@ -24,34 +24,42 @@
 <body>
 <div class="card">
     <div class="header-info">
-        👤 <span class="val" id="pib">...</span> | 
-        📌 <span class="val" id="posada">...</span> | 
-        🏢 <span class="val" id="viddil">...</span>
+        👤 <span class="val" id="pib">{{ pib }}</span> | 
+        📌 <span class="val" id="posada">{{ posada }}</span> | 
+        🏢 <span class="val" id="viddil">{{ viddil }}</span>
         <br>
-        🚗 <span class="val" id="car">...</span> | 
-        📏 Одометр початок: <span class="val" id="odo_start">0</span> км
+        🚗 <span class="val" id="car_display">{{ cars[0] if cars else 'Немає авто' }}</span> | 
+        📏 Одометр початок: <span class="val" id="odo_start_display">{{ odo_start }}</span> км
     </div>
 
     <div class="input-group">
+        <!-- ВИБІР АВТО -->
+        <label>Автомобіль</label>
+        <select id="car_select" onchange="updateOdoStart()">
+            {% for car in cars %}
+            <option value="{{ car }}" {% if loop.first %}selected{% endif %}>{{ car }}</option>
+            {% endfor %}
+        </select>
+
         <label>Дата візиту</label>
-        <input type="date" id="stop_date" value="">
-        
+        <input type="date" id="stop_date" value="{{ today }}">
+
         <label>Область</label>
         <input type="text" id="region" placeholder="Напр. Кіровоградська">
-        
+
         <label>Село / Населений пункт</label>
         <input type="text" id="village" placeholder="Напр. Знам'янка">
-        
+
         <label>Клієнт</label>
         <input type="text" id="client" placeholder="Назва компанії">
-        
+
         <label>Мета візиту</label>
         <input type="text" id="purpose" placeholder="Напр. Перемовини про поставку">
-        
+
         <label>Результат</label>
         <textarea id="result" rows="2" placeholder="Що вдалося зробити?"></textarea>
-        
-        <label>Одометр на кінець (км)</label>
+
+        <label>Одометр на кінець (км) - введіть вручну</label>
         <input type="number" id="odo_end" placeholder="Введіть пробіг на кінець" required>
     </div>
 
@@ -67,19 +75,22 @@
     let tg = window.Telegram.WebApp;
     tg.expand();
 
-    // Отримуємо параметри з URL
+    // Отримуємо параметри з URL (передані з бота)
     const params = new URLSearchParams(window.location.search);
-    document.getElementById('pib').innerText = params.get('pib') || '---';
-    document.getElementById('posada').innerText = params.get('posada') || '---';
-    document.getElementById('viddil').innerText = params.get('viddil') || '---';
-    document.getElementById('car').innerText = params.get('car') || '---';
-    document.getElementById('odo_start').innerText = params.get('odo_start') || '0';
+    // Якщо дані прийшли через URL, можна оновити заголовок, але ми використовуємо Flask-рендеринг, тому дані вже в HTML.
 
-    // Встановлюємо сьогоднішню дату за замовчуванням
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('stop_date').value = today;
+    // Функція оновлення одометра при зміні авто
+    async function updateOdoStart() {
+        const car = document.getElementById('car_select').value;
+        const response = await fetch(`/get_last_odo?car=${encodeURIComponent(car)}`);
+        const data = await response.json();
+        document.getElementById('odo_start_display').innerText = data.odo || 0;
+        // Оновлюємо також відображення авто в хедері
+        document.getElementById('car_display').innerText = car;
+    }
 
     function submitFieldWork() {
+        const car = document.getElementById('car_select').value;
         const odo_end = document.getElementById('odo_end').value;
         if (!odo_end || isNaN(odo_end)) {
             alert('Будь ласка, введіть одометр на кінець (число).');
@@ -88,23 +99,24 @@
 
         const data = {
             type: "field_work",
-            trip_id: params.get('trip_id') || null, // Якщо передали trip_id – використовуємо, інакше згенеруємо в боті
+            trip_id: null, // бот згенерує сам
             stop_date: document.getElementById('stop_date').value,
             region: document.getElementById('region').value.trim(),
             village: document.getElementById('village').value.trim(),
             client: document.getElementById('client').value.trim(),
             purpose: document.getElementById('purpose').value.trim(),
             result: document.getElementById('result').value.trim(),
-            odo_start: params.get('odo_start') || '0',
+            odo_start: document.getElementById('odo_start_display').innerText,
             odo_end: odo_end,
-            manager: params.get('pib') || '',
-            car: params.get('car') || '',
-            user_id: params.get('user_id') || ''
+            manager: document.getElementById('pib').innerText,
+            car: car,
+            user_id: {{ user_id|tojson }} // передаємо з Flask
         };
 
         // Показуємо попередній перегляд
         const preview = document.getElementById('preview_content');
         preview.innerHTML = `
+            <div class="preview-item"><b>Авто:</b> ${data.car}</div>
             <div class="preview-item"><b>Дата:</b> ${data.stop_date}</div>
             <div class="preview-item"><b>Область:</b> ${data.region}</div>
             <div class="preview-item"><b>Село:</b> ${data.village}</div>
@@ -121,6 +133,15 @@
         tg.sendData(JSON.stringify(data));
         setTimeout(() => tg.close(), 500);
     }
+
+    // Ініціалізація: встановлюємо початковий одометр для першого авто
+    window.onload = function() {
+        // Якщо є авто в списку, оновлюємо одометр
+        const carSelect = document.getElementById('car_select');
+        if (carSelect.options.length > 0) {
+            updateOdoStart();
+        }
+    };
 </script>
 </body>
 </html>
