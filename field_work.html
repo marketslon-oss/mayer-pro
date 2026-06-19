@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Виїзна робота - Mayer Pro</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { font-family: 'Arial', sans-serif; background: #f0f2f5; padding: 10px; margin: 0; }
+        .card { background: white; border-radius: 12px; padding: 15px; max-width: 600px; margin: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header-info { background: #f8f9fa; border-left: 4px solid #3b82f6; padding: 10px; border-radius: 4px; margin-bottom: 15px; font-size: 14px; }
+        .val { font-weight: 800; }
+        .input-group { margin-bottom: 12px; }
+        label { display: block; font-size: 12px; font-weight: bold; color: #374151; margin-bottom: 4px; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+        .send-btn { width: 100%; background: #3b82f6; color: white; border: none; padding: 15px; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 10px; }
+        .readonly { background: #e9ecef; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="header-info">
+        👤 <span class="val" id="manager">...</span> | 
+        📌 <span class="val" id="posada">...</span> | 
+        🏢 <span class="val" id="viddil">...</span>
+    </div>
+    <div class="input-group">
+        <label>Автомобіль</label>
+        <select id="car"></select>
+    </div>
+    <div class="input-group">
+        <label>Дата візиту</label>
+        <input type="date" id="stop_date">
+    </div>
+    <div class="input-group">
+        <label>Область</label>
+        <input type="text" id="region" placeholder="Введіть область">
+    </div>
+    <div class="input-group">
+        <label>Село</label>
+        <input type="text" id="village" placeholder="Введіть село">
+    </div>
+    <div class="input-group">
+        <label>Клієнт</label>
+        <input type="text" id="client" placeholder="Назва клієнта">
+    </div>
+    <div class="input-group">
+        <label>Мета візиту</label>
+        <textarea id="purpose" rows="2" placeholder="Опишіть мету"></textarea>
+    </div>
+    <div class="input-group">
+        <label>Результат</label>
+        <textarea id="result" rows="2" placeholder="Результат візиту"></textarea>
+    </div>
+    <div class="input-group">
+        <label>Одометр на початок (автоматично)</label>
+        <input type="number" id="odo_start" class="readonly" readonly>
+    </div>
+    <div class="input-group">
+        <label>Одометр на кінець</label>
+        <input type="number" id="odo_end" placeholder="Введіть пробіг">
+    </div>
+    <button class="send-btn" onclick="submitFieldWork()">💾 Зберегти</button>
+</div>
+
+<script>
+    let tg = window.Telegram.WebApp;
+    tg.expand();
+
+    // Параметри з URL
+    const params = new URLSearchParams(window.location.search);
+    document.getElementById('manager').innerText = params.get('pib') || '---';
+    document.getElementById('posada').innerText = params.get('posada') || '---';
+    document.getElementById('viddil').innerText = params.get('viddil') || '---';
+    const user_id = params.get('user_id') || '';
+
+    // Завантажуємо список авто та останній одометр
+    fetch('/api/cars_and_odo')  // якщо у вас є Flask-ендпоінт для цього
+        .then(res => res.json())
+        .then(data => {
+            const select = document.getElementById('car');
+            data.cars.forEach(car => {
+                const option = document.createElement('option');
+                option.value = car;
+                option.text = car;
+                select.appendChild(option);
+            });
+            // Автоматично оновлюємо одометр при зміні авто
+            document.getElementById('car').addEventListener('change', function() {
+                const selectedCar = this.value;
+                const found = data.odo_data.find(item => item.car === selectedCar);
+                document.getElementById('odo_start').value = found ? found.odo : 0;
+            });
+            // Завантажуємо перший одометр
+            if (data.cars.length) {
+                const firstCar = data.cars[0];
+                const found = data.odo_data.find(item => item.car === firstCar);
+                document.getElementById('odo_start').value = found ? found.odo : 0;
+            }
+        })
+        .catch(err => console.error('Помилка завантаження авто:', err));
+
+    function submitFieldWork() {
+        const car = document.getElementById('car').value;
+        const stop_date = document.getElementById('stop_date').value;
+        const region = document.getElementById('region').value;
+        const village = document.getElementById('village').value;
+        const client = document.getElementById('client').value;
+        const purpose = document.getElementById('purpose').value;
+        const result = document.getElementById('result').value;
+        const odo_start = document.getElementById('odo_start').value;
+        const odo_end = document.getElementById('odo_end').value;
+
+        if (!car || !stop_date || !odo_end) {
+            alert('Заповніть обов\'язкові поля: автомобіль, дата, одометр на кінець.');
+            return;
+        }
+
+        const data = {
+            type: "field_work",
+            trip_id: `FW-${user_id}-${Date.now()}`,
+            car: car,
+            stop_date: stop_date,
+            region: region,
+            village: village,
+            client: client,
+            purpose: purpose,
+            result: result,
+            odo_start: odo_start,
+            odo_end: odo_end,
+            manager: document.getElementById('manager').innerText,
+            user_id: user_id
+        };
+
+        tg.sendData(JSON.stringify(data));
+        tg.close();
+    }
+</script>
+</body>
+</html>
