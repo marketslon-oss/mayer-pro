@@ -27,6 +27,8 @@
         details { border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px; margin-bottom: 10px; background: #f9fafb; }
         details summary { cursor: pointer; padding: 5px; font-weight: bold; color: #1e40af; }
         details[open] summary { border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 8px; }
+        .existing-label { background: #dbeafe; padding: 4px 8px; border-radius: 4px; font-size: 11px; color: #1e40af; }
+        .count-badge { background: #3b82f6; color: white; padding: 2px 10px; border-radius: 12px; font-size: 12px; }
     </style>
 </head>
 <body>
@@ -40,11 +42,12 @@
         📏 Одометр початок: <span class="val" id="odo_start">0</span> км
         <br>
         <span id="trip_display" style="font-size:12px; color:#6b7280;"></span>
+        <span id="client_count" style="font-size:12px; color:#6b7280; margin-left:10px;"></span>
     </div>
 
     <div class="input-group">
         <label>Автомобіль</label>
-        <select id="car_select">
+        <select id="car_select" onchange="updateOdo()">
             <option value="Opel Combo (KA1197MO)">Opel Combo (KA1197MO)</option>
             <option value="Toyota Corolla (KA4730AP)">Toyota Corolla (KA4730AP)</option>
             <option value="Renault Duster (KA0144PK)">Renault Duster (KA0144PK)</option>
@@ -56,56 +59,7 @@
         <hr style="margin: 15px 0; border: 1px dashed #d1d5db;">
 
         <div id="clients_container">
-            <!-- Перший клієнт -->
-            <details open data-index="0" id="detail_0">
-                <summary class="client-summary">
-                    <span id="summary_0">Клієнт 1</span>
-                    <button class="remove-btn" onclick="removeClient(0)" style="display:none;">✕</button>
-                </summary>
-                <div class="client-block" data-index="0">
-                    <label>Область</label>
-                    <select class="region-select">
-                        <option value="">Оберіть область</option>
-                        <option value="Вінницька">Вінницька</option>
-                        <option value="Волинська">Волинська</option>
-                        <option value="Дніпропетровська">Дніпропетровська</option>
-                        <option value="Донецька">Донецька</option>
-                        <option value="Житомирська">Житомирська</option>
-                        <option value="Закарпатська">Закарпатська</option>
-                        <option value="Запорізька">Запорізька</option>
-                        <option value="Івано-Франківська">Івано-Франківська</option>
-                        <option value="Київська">Київська</option>
-                        <option value="Кіровоградська" selected>Кіровоградська</option>
-                        <option value="Луганська">Луганська</option>
-                        <option value="Львівська">Львівська</option>
-                        <option value="Миколаївська">Миколаївська</option>
-                        <option value="Одеська">Одеська</option>
-                        <option value="Полтавська">Полтавська</option>
-                        <option value="Рівненська">Рівненська</option>
-                        <option value="Сумська">Сумська</option>
-                        <option value="Тернопільська">Тернопільська</option>
-                        <option value="Харківська">Харківська</option>
-                        <option value="Херсонська">Херсонська</option>
-                        <option value="Хмельницька">Хмельницька</option>
-                        <option value="Черкаська">Черкаська</option>
-                        <option value="Чернівецька">Чернівецька</option>
-                        <option value="Чернігівська">Чернігівська</option>
-                        <option value="м. Київ">м. Київ</option>
-                    </select>
-
-                    <label>Село / Населений пункт</label>
-                    <input type="text" class="village-input" placeholder="Напр. Знам'янка">
-
-                    <label>Клієнт</label>
-                    <input type="text" class="client-input" placeholder="Назва компанії" oninput="updateSummary(0)">
-
-                    <label>Мета візиту</label>
-                    <input type="text" class="purpose-input" placeholder="Напр. Перемовини про поставку">
-
-                    <label>Результат</label>
-                    <textarea class="result-input" rows="2" placeholder="Що вдалося зробити?"></textarea>
-                </div>
-            </details>
+            <!-- Клієнти будуть додані через JS -->
         </div>
 
         <button class="add-btn" onclick="addClient()">➕ Додати клієнта</button>
@@ -126,24 +80,55 @@
     // Отримуємо параметри з URL
     const params = new URLSearchParams(window.location.search);
     const tripId = params.get('trip_id') || null;
+    const clientsParam = params.get('clients');
+    let existingClients = [];
+
+    if (clientsParam) {
+        try {
+            existingClients = JSON.parse(decodeURIComponent(clientsParam));
+        } catch (e) {
+            console.error('Помилка парсингу клієнтів:', e);
+        }
+    }
+
     document.getElementById('pib').innerText = params.get('pib') || '---';
     document.getElementById('posada').innerText = params.get('posada') || '---';
     document.getElementById('viddil').innerText = params.get('viddil') || '---';
 
-    // Відображаємо trip_id, якщо є
     if (tripId) {
         document.getElementById('trip_display').innerText = `🆔 Поїздка: ${tripId}`;
     }
 
-    // Початковий одометр (захардкоджено, але можна передавати через параметри)
-    const odoStart = params.get('odo_start') || 0;
-    document.getElementById('odo_start').innerText = odoStart;
+    // Початковий одометр
+    const odoStartParam = params.get('odo_start');
+    if (odoStartParam) {
+        document.getElementById('odo_start').innerText = odoStartParam;
+    }
 
-    // Встановлюємо сьогоднішню дату
+    // Словник одометрів
+    let odoMap = {};
+    const odoDataParam = params.get('odo_data');
+    if (odoDataParam) {
+        try {
+            odoMap = JSON.parse(decodeURIComponent(odoDataParam));
+        } catch (e) {
+            console.error('Помилка парсингу odo_data:', e);
+        }
+    }
+
+    function updateOdo() {
+        const car = document.getElementById('car_select').value;
+        const odo = odoMap[car] || 0;
+        document.getElementById('odo_start').innerText = odo;
+        document.getElementById('car_display').innerText = car;
+    }
+
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('stop_date').value = today;
 
-    let clientCounter = 1;
+    updateOdo();
+
+    let clientCounter = 0;
 
     function updateSummary(index) {
         const detail = document.getElementById(`detail_${index}`);
@@ -161,6 +146,142 @@
             label = `Клієнт ${index + 1} (${village})`;
         }
         summarySpan.innerText = label;
+        updateClientCount();
+    }
+
+    function updateClientCount() {
+        const details = document.querySelectorAll('details');
+        document.getElementById('client_count').innerText = `👥 Всього: ${details.length}`;
+    }
+
+    function createClientBlock(index, data) {
+        const detail = document.createElement('details');
+        detail.id = `detail_${index}`;
+        detail.open = true;
+        detail.dataset.index = index;
+
+        const summary = document.createElement('summary');
+        summary.className = 'client-summary';
+        const span = document.createElement('span');
+        span.id = `summary_${index}`;
+        span.innerText = data ? data.client || `Клієнт ${index + 1}` : `Клієнт ${index + 1}`;
+        summary.appendChild(span);
+
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-btn';
+        removeBtn.innerText = '✕';
+        removeBtn.style.display = index === 0 && !data ? 'none' : 'inline';
+        removeBtn.onclick = function(e) {
+            e.stopPropagation();
+            removeClient(index);
+        };
+        summary.appendChild(removeBtn);
+        detail.appendChild(summary);
+
+        const block = document.createElement('div');
+        block.className = 'client-block';
+        block.dataset.index = index;
+
+        // Область
+        const regionLabel = document.createElement('label');
+        regionLabel.innerText = 'Область';
+        block.appendChild(regionLabel);
+        const regionSelect = document.createElement('select');
+        regionSelect.className = 'region-select';
+        const regions = [
+            '', 'Вінницька', 'Волинська', 'Дніпропетровська', 'Донецька', 'Житомирська',
+            'Закарпатська', 'Запорізька', 'Івано-Франківська', 'Київська', 'Кіровоградська',
+            'Луганська', 'Львівська', 'Миколаївська', 'Одеська', 'Полтавська', 'Рівненська',
+            'Сумська', 'Тернопільська', 'Харківська', 'Херсонська', 'Хмельницька',
+            'Черкаська', 'Чернівецька', 'Чернігівська', 'м. Київ'
+        ];
+        regions.forEach(r => {
+            const opt = document.createElement('option');
+            opt.value = r;
+            opt.text = r || 'Оберіть область';
+            if (data && data.region === r) opt.selected = true;
+            regionSelect.appendChild(opt);
+        });
+        block.appendChild(regionSelect);
+
+        // Село
+        const villageLabel = document.createElement('label');
+        villageLabel.innerText = 'Село / Населений пункт';
+        block.appendChild(villageLabel);
+        const villageInput = document.createElement('input');
+        villageInput.type = 'text';
+        villageInput.className = 'village-input';
+        villageInput.placeholder = 'Напр. Знам\'янка';
+        if (data && data.village) villageInput.value = data.village;
+        villageInput.addEventListener('input', () => updateSummary(index));
+        block.appendChild(villageInput);
+
+        // Клієнт
+        const clientLabel = document.createElement('label');
+        clientLabel.innerText = 'Клієнт';
+        block.appendChild(clientLabel);
+        const clientInput = document.createElement('input');
+        clientInput.type = 'text';
+        clientInput.className = 'client-input';
+        clientInput.placeholder = 'Назва компанії';
+        if (data && data.client) clientInput.value = data.client;
+        clientInput.addEventListener('input', () => updateSummary(index));
+        block.appendChild(clientInput);
+
+        // Мета
+        const purposeLabel = document.createElement('label');
+        purposeLabel.innerText = 'Мета візиту';
+        block.appendChild(purposeLabel);
+        const purposeInput = document.createElement('input');
+        purposeInput.type = 'text';
+        purposeInput.className = 'purpose-input';
+        purposeInput.placeholder = 'Напр. Перемовини про поставку';
+        if (data && data.purpose) purposeInput.value = data.purpose;
+        block.appendChild(purposeInput);
+
+        // Результат
+        const resultLabel = document.createElement('label');
+        resultLabel.innerText = 'Результат';
+        block.appendChild(resultLabel);
+        const resultInput = document.createElement('textarea');
+        resultInput.className = 'result-input';
+        resultInput.rows = 2;
+        resultInput.placeholder = 'Що вдалося зробити?';
+        if (data && data.result) resultInput.value = data.result;
+        block.appendChild(resultInput);
+
+        detail.appendChild(block);
+        return detail;
+    }
+
+    function renderClients() {
+        const container = document.getElementById('clients_container');
+        container.innerHTML = '';
+
+        // Спочатку додаємо існуючих клієнтів
+        existingClients.forEach((c, idx) => {
+            const detail = createClientBlock(idx, c);
+            // Згортаємо всі попередні (крім першого)
+            if (idx > 0) detail.open = false;
+            container.appendChild(detail);
+        });
+
+        clientCounter = existingClients.length;
+
+        // Якщо немає жодного клієнта – створюємо порожній перший блок
+        if (existingClients.length === 0) {
+            const firstDetail = createClientBlock(0, null);
+            container.appendChild(firstDetail);
+            clientCounter = 1;
+        }
+
+        // Якщо є існуючі клієнти, додаємо блок для нового клієнта (згорнутий)
+        const newDetail = createClientBlock(clientCounter, null);
+        newDetail.open = false;
+        container.appendChild(newDetail);
+        clientCounter++;
+
+        updateClientCount();
     }
 
     function addClient() {
@@ -169,63 +290,30 @@
         allDetails.forEach(d => d.open = false);
 
         const container = document.getElementById('clients_container');
-        const firstDetail = container.querySelector('details');
-        const newDetail = firstDetail.cloneNode(true);
-        const index = clientCounter++;
-
-        newDetail.id = `detail_${index}`;
+        const newDetail = createClientBlock(clientCounter, null);
         newDetail.open = true;
-        newDetail.dataset.index = index;
-
-        // Очищуємо значення полів
-        newDetail.querySelectorAll('input, textarea, select').forEach(el => {
-            if (el.tagName === 'SELECT') {
-                el.selectedIndex = 0;
-            } else if (el.className !== 'remove-btn') {
-                el.value = '';
-            }
-        });
-
-        // Оновлюємо заголовок
-        const summarySpan = document.getElementById(`summary_${index}`) || newDetail.querySelector('summary span');
-        if (summarySpan) {
-            summarySpan.id = `summary_${index}`;
-            summarySpan.innerText = `Клієнт ${index + 1}`;
-        }
-
-        // Кнопка видалення
-        const removeBtn = newDetail.querySelector('.remove-btn');
-        removeBtn.style.display = 'inline';
-        removeBtn.onclick = function(e) {
-            e.stopPropagation();
-            removeClient(index);
-        };
-
-        // Оновлення заголовка при введенні
-        const clientInput = newDetail.querySelector('.client-input');
-        const villageInput = newDetail.querySelector('.village-input');
-        if (clientInput) {
-            clientInput.addEventListener('input', () => updateSummary(index));
-        }
-        if (villageInput) {
-            villageInput.addEventListener('input', () => updateSummary(index));
-        }
-
         container.appendChild(newDetail);
-        updateAllNumbers();
+        clientCounter++;
+        updateClientCount();
     }
 
     function removeClient(index) {
         const container = document.getElementById('clients_container');
         const details = container.querySelectorAll('details');
-        if (details.length <= 1) {
+        if (details.length <= 2 && existingClients.length === 0) {
             alert('Має бути хоча б один клієнт.');
             return;
         }
         const target = document.getElementById(`detail_${index}`);
         if (target) {
             target.remove();
+            // Якщо видалили існуючого клієнта – видаляємо його з existingClients
+            const removedClient = existingClients[index];
+            if (removedClient) {
+                existingClients.splice(index, 1);
+            }
             updateAllNumbers();
+            updateClientCount();
         }
     }
 
@@ -233,15 +321,34 @@
         const container = document.getElementById('clients_container');
         const details = container.querySelectorAll('details');
         details.forEach((detail, idx) => {
-            const summarySpan = detail.querySelector('summary span');
-            if (summarySpan && !summarySpan.innerText.includes('(')) {
-                summarySpan.innerText = `Клієнт ${idx + 1}`;
-            }
             detail.dataset.index = idx;
             detail.id = `detail_${idx}`;
-            const newSummary = document.getElementById(`summary_${idx}`);
-            if (newSummary) {
-                newSummary.id = `summary_${idx}`;
+            const summarySpan = document.getElementById(`summary_${idx}`);
+            if (summarySpan) {
+                summarySpan.id = `summary_${idx}`;
+                // Якщо це існуючий клієнт – зберігаємо його назву
+                const clientInput = detail.querySelector('.client-input');
+                const villageInput = detail.querySelector('.village-input');
+                const clientName = clientInput ? clientInput.value.trim() : '';
+                const village = villageInput ? villageInput.value.trim() : '';
+                let label = `Клієнт ${idx + 1}`;
+                if (clientName) {
+                    label = clientName;
+                    if (village) label += ` (${village})`;
+                } else if (village) {
+                    label = `Клієнт ${idx + 1} (${village})`;
+                }
+                summarySpan.innerText = label;
+            }
+            // Оновлюємо кнопку видалення
+            const removeBtn = detail.querySelector('.remove-btn');
+            if (removeBtn) {
+                const isExisting = idx < existingClients.length;
+                removeBtn.style.display = (details.length <= 1) ? 'none' : 'inline';
+                removeBtn.onclick = function(e) {
+                    e.stopPropagation();
+                    removeClient(idx);
+                };
             }
         });
     }
@@ -268,22 +375,29 @@
             return;
         }
 
+        // Перевіряємо, чи є нові клієнти (не з existingClients)
+        const newClients = clients.slice(existingClients.length);
+        if (newClients.length === 0) {
+            alert('Всі клієнти вже додані. Додайте нового клієнта або змініть існуючого.');
+            return;
+        }
+
         const data = {
             type: "field_work",
-            trip_id: tripId,  // передаємо trip_id, якщо є
+            trip_id: tripId || null,
             stop_date: stop_date,
             car: car,
             manager: document.getElementById('pib').innerText || '',
             user_id: params.get('user_id') || '',
             odo_start: document.getElementById('odo_start').innerText || '0',
-            clients: clients
+            clients: newClients  // передаємо тільки нових клієнтів
         };
 
         let previewHtml = `<div class="preview-item"><b>Авто:</b> ${data.car}</div>`;
         previewHtml += `<div class="preview-item"><b>Дата:</b> ${data.stop_date}</div>`;
         previewHtml += `<div class="preview-item"><b>Одометр початок:</b> ${data.odo_start} км</div>`;
-        previewHtml += `<div class="preview-item"><b>Кількість клієнтів:</b> ${clients.length}</div>`;
-        clients.forEach((c, i) => {
+        previewHtml += `<div class="preview-item"><b>Нових клієнтів:</b> ${newClients.length}</div>`;
+        newClients.forEach((c, i) => {
             previewHtml += `<div class="preview-item"><b>${i+1}. ${c.client}</b> — ${c.village}, ${c.region}<br><span style="font-size:12px;">Мета: ${c.purpose || '-'} | Результат: ${c.result || '-'}</span></div>`;
         });
         document.getElementById('preview_content').innerHTML = previewHtml;
@@ -294,9 +408,7 @@
     }
 
     // Ініціалізація
-    window.onload = function() {
-        updateSummary(0);
-    };
+    renderClients();
 </script>
 </body>
 </html>
