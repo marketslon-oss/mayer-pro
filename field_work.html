@@ -38,12 +38,13 @@
         <br>
         🚗 <span class="val" id="car_display">...</span> | 
         📏 Одометр початок: <span class="val" id="odo_start">0</span> км
+        <br>
+        <span id="trip_display" style="font-size:12px; color:#6b7280;"></span>
     </div>
 
     <div class="input-group">
         <label>Автомобіль</label>
-        <select id="car_select" onchange="updateOdo()">
-            <!-- Список авто (захардкоджено) -->
+        <select id="car_select">
             <option value="Opel Combo (KA1197MO)">Opel Combo (KA1197MO)</option>
             <option value="Toyota Corolla (KA4730AP)">Toyota Corolla (KA4730AP)</option>
             <option value="Renault Duster (KA0144PK)">Renault Duster (KA0144PK)</option>
@@ -124,41 +125,23 @@
 
     // Отримуємо параметри з URL
     const params = new URLSearchParams(window.location.search);
+    const tripId = params.get('trip_id') || null;
     document.getElementById('pib').innerText = params.get('pib') || '---';
     document.getElementById('posada').innerText = params.get('posada') || '---';
     document.getElementById('viddil').innerText = params.get('viddil') || '---';
 
-    // Початковий одометр з параметрів
-    const odoStartParam = params.get('odo_start');
-    if (odoStartParam) {
-        document.getElementById('odo_start').innerText = odoStartParam;
+    // Відображаємо trip_id, якщо є
+    if (tripId) {
+        document.getElementById('trip_display').innerText = `🆔 Поїздка: ${tripId}`;
     }
 
-    // Словник одометрів для кожного авто (якщо передано)
-    let odoMap = {};
-    const odoDataParam = params.get('odo_data');
-    if (odoDataParam) {
-        try {
-            odoMap = JSON.parse(decodeURIComponent(odoDataParam));
-        } catch (e) {
-            console.error('Помилка парсингу odo_data:', e);
-        }
-    }
-
-    // Оновлення одометра при зміні авто
-    function updateOdo() {
-        const car = document.getElementById('car_select').value;
-        const odo = odoMap[car] || 0;
-        document.getElementById('odo_start').innerText = odo;
-        document.getElementById('car_display').innerText = car;
-    }
+    // Початковий одометр (захардкоджено, але можна передавати через параметри)
+    const odoStart = params.get('odo_start') || 0;
+    document.getElementById('odo_start').innerText = odoStart;
 
     // Встановлюємо сьогоднішню дату
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('stop_date').value = today;
-
-    // Викликаємо оновлення при завантаженні
-    updateOdo();
 
     let clientCounter = 1;
 
@@ -287,6 +270,7 @@
 
         const data = {
             type: "field_work",
+            trip_id: tripId,  // передаємо trip_id, якщо є
             stop_date: stop_date,
             car: car,
             manager: document.getElementById('pib').innerText || '',
@@ -312,10 +296,6 @@
     // Ініціалізація
     window.onload = function() {
         updateSummary(0);
-        // Якщо є odo_data, оновлюємо одометр
-        if (Object.keys(odoMap).length > 0) {
-            updateOdo();
-        }
     };
 </script>
 </body>
