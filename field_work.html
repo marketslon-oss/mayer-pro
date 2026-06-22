@@ -42,7 +42,8 @@
 
     <div class="input-group">
         <label>Автомобіль</label>
-        <select id="car_select">
+        <select id="car_select" onchange="updateOdo()">
+            <!-- Список авто (захардкоджено) -->
             <option value="Opel Combo (KA1197MO)">Opel Combo (KA1197MO)</option>
             <option value="Toyota Corolla (KA4730AP)">Toyota Corolla (KA4730AP)</option>
             <option value="Renault Duster (KA0144PK)">Renault Duster (KA0144PK)</option>
@@ -54,7 +55,7 @@
         <hr style="margin: 15px 0; border: 1px dashed #d1d5db;">
 
         <div id="clients_container">
-            <!-- Перший клієнт (за замовчуванням) -->
+            <!-- Перший клієнт -->
             <details open data-index="0" id="detail_0">
                 <summary class="client-summary">
                     <span id="summary_0">Клієнт 1</span>
@@ -127,13 +128,40 @@
     document.getElementById('posada').innerText = params.get('posada') || '---';
     document.getElementById('viddil').innerText = params.get('viddil') || '---';
 
+    // Початковий одометр з параметрів
+    const odoStartParam = params.get('odo_start');
+    if (odoStartParam) {
+        document.getElementById('odo_start').innerText = odoStartParam;
+    }
+
+    // Словник одометрів для кожного авто (якщо передано)
+    let odoMap = {};
+    const odoDataParam = params.get('odo_data');
+    if (odoDataParam) {
+        try {
+            odoMap = JSON.parse(decodeURIComponent(odoDataParam));
+        } catch (e) {
+            console.error('Помилка парсингу odo_data:', e);
+        }
+    }
+
+    // Оновлення одометра при зміні авто
+    function updateOdo() {
+        const car = document.getElementById('car_select').value;
+        const odo = odoMap[car] || 0;
+        document.getElementById('odo_start').innerText = odo;
+        document.getElementById('car_display').innerText = car;
+    }
+
     // Встановлюємо сьогоднішню дату
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('stop_date').value = today;
 
+    // Викликаємо оновлення при завантаженні
+    updateOdo();
+
     let clientCounter = 1;
 
-    // Функція оновлення заголовка клієнта
     function updateSummary(index) {
         const detail = document.getElementById(`detail_${index}`);
         if (!detail) return;
@@ -162,7 +190,6 @@
         const newDetail = firstDetail.cloneNode(true);
         const index = clientCounter++;
 
-        // Оновлюємо ID та атрибути
         newDetail.id = `detail_${index}`;
         newDetail.open = true;
         newDetail.dataset.index = index;
@@ -183,7 +210,7 @@
             summarySpan.innerText = `Клієнт ${index + 1}`;
         }
 
-        // Додаємо обробник для кнопки видалення
+        // Кнопка видалення
         const removeBtn = newDetail.querySelector('.remove-btn');
         removeBtn.style.display = 'inline';
         removeBtn.onclick = function(e) {
@@ -191,7 +218,7 @@
             removeClient(index);
         };
 
-        // Додаємо обробник для оновлення заголовка при введенні клієнта
+        // Оновлення заголовка при введенні
         const clientInput = newDetail.querySelector('.client-input');
         const villageInput = newDetail.querySelector('.village-input');
         if (clientInput) {
@@ -201,10 +228,7 @@
             villageInput.addEventListener('input', () => updateSummary(index));
         }
 
-        // Додаємо в контейнер
         container.appendChild(newDetail);
-
-        // Оновлюємо нумерацію всіх клієнтів
         updateAllNumbers();
     }
 
@@ -230,11 +254,8 @@
             if (summarySpan && !summarySpan.innerText.includes('(')) {
                 summarySpan.innerText = `Клієнт ${idx + 1}`;
             }
-            // Оновлюємо data-index для кожного блоку
             detail.dataset.index = idx;
-            // Оновлюємо id
             detail.id = `detail_${idx}`;
-            // Оновлюємо id для summary
             const newSummary = document.getElementById(`summary_${idx}`);
             if (newSummary) {
                 newSummary.id = `summary_${idx}`;
@@ -246,7 +267,6 @@
         const car = document.getElementById('car_select').value;
         const stop_date = document.getElementById('stop_date').value;
 
-        // Збираємо дані клієнтів
         const clients = [];
         const details = document.querySelectorAll('details');
         details.forEach(detail => {
@@ -271,12 +291,13 @@
             car: car,
             manager: document.getElementById('pib').innerText || '',
             user_id: params.get('user_id') || '',
+            odo_start: document.getElementById('odo_start').innerText || '0',
             clients: clients
         };
 
-        // Попередній перегляд
         let previewHtml = `<div class="preview-item"><b>Авто:</b> ${data.car}</div>`;
         previewHtml += `<div class="preview-item"><b>Дата:</b> ${data.stop_date}</div>`;
+        previewHtml += `<div class="preview-item"><b>Одометр початок:</b> ${data.odo_start} км</div>`;
         previewHtml += `<div class="preview-item"><b>Кількість клієнтів:</b> ${clients.length}</div>`;
         clients.forEach((c, i) => {
             previewHtml += `<div class="preview-item"><b>${i+1}. ${c.client}</b> — ${c.village}, ${c.region}<br><span style="font-size:12px;">Мета: ${c.purpose || '-'} | Результат: ${c.result || '-'}</span></div>`;
@@ -288,9 +309,13 @@
         setTimeout(() => tg.close(), 500);
     }
 
-    // Ініціалізація: оновлюємо заголовок першого клієнта
+    // Ініціалізація
     window.onload = function() {
         updateSummary(0);
+        // Якщо є odo_data, оновлюємо одометр
+        if (Object.keys(odoMap).length > 0) {
+            updateOdo();
+        }
     };
 </script>
 </body>
