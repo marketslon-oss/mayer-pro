@@ -46,7 +46,6 @@
         <span id="trip_display" class="trip-id-label"></span>
     </div>
 
-    <!-- Блок із уже доданими клієнтами -->
     <div id="existing_clients_box" class="existing-clients-box" style="display: none;">
         <b style="color: #16a34a;">👥 Вже додані клієнти:</b>
         <div id="existing_clients_list" style="margin-top: 8px; font-size: 13px; max-height: 200px; overflow-y: auto;"></div>
@@ -66,7 +65,6 @@
         <hr style="margin: 15px 0; border: 1px dashed #d1d5db;">
 
         <div id="clients_container">
-            <!-- Перший клієнт -->
             <details open data-index="0" id="detail_0">
                 <summary class="client-summary">
                     <span id="summary_0">Клієнт 1</span>
@@ -133,24 +131,26 @@
     let tg = window.Telegram.WebApp;
     tg.expand();
 
-    // Отримуємо параметри з URL
     const params = new URLSearchParams(window.location.search);
     const pib = params.get('pib') || '---';
     const posada = params.get('posada') || '---';
     const viddil = params.get('viddil') || '---';
     const tripId = params.get('trip_id') || null;
     const existingClientsParam = params.get('existing_clients');
+    const odoStartParam = params.get('odo_start');
 
     document.getElementById('pib').innerText = pib;
     document.getElementById('posada').innerText = posada;
     document.getElementById('viddil').innerText = viddil;
 
-    // Відображаємо trip_id
     if (tripId) {
         document.getElementById('trip_display').innerText = `🆔 Поїздка: ${tripId}`;
     }
 
-    // Відображаємо вже доданих клієнтів
+    if (odoStartParam) {
+        document.getElementById('odo_start').innerText = odoStartParam;
+    }
+
     if (existingClientsParam) {
         try {
             const clients = JSON.parse(decodeURIComponent(existingClientsParam));
@@ -171,7 +171,6 @@
         }
     }
 
-    // Встановлюємо сьогоднішню дату
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('stop_date').value = today;
 
@@ -318,7 +317,6 @@
         setTimeout(() => tg.close(), 500);
     }
 
-    // Ініціалізація
     window.onload = function() {
         updateSummary(0);
     };
