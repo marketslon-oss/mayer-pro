@@ -22,9 +22,11 @@
         .client-block { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px; margin-bottom: 12px; position: relative; }
         .remove-btn { position: absolute; top: 6px; right: 10px; color: #ef4444; font-size: 18px; cursor: pointer; background: none; border: none; z-index: 10; }
         .add-btn { background: #10b981; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 5px; }
-        details { margin-bottom: 8px; }
-        summary { font-weight: bold; cursor: pointer; color: #1f2937; padding: 6px 0; }
-        summary:focus { outline: none; }
+        .client-summary { font-weight: bold; cursor: pointer; display: flex; justify-content: space-between; align-items: center; padding: 5px 0; }
+        .client-summary span { color: #1f2937; }
+        details { border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px; margin-bottom: 10px; background: #f9fafb; }
+        details summary { cursor: pointer; padding: 5px; font-weight: bold; color: #1e40af; }
+        details[open] summary { border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 8px; }
     </style>
 </head>
 <body>
@@ -41,7 +43,6 @@
     <div class="input-group">
         <label>Автомобіль</label>
         <select id="car_select">
-            <!-- Список авто (захардкодь або передай через параметри) -->
             <option value="Opel Combo (KA1197MO)">Opel Combo (KA1197MO)</option>
             <option value="Toyota Corolla (KA4730AP)">Toyota Corolla (KA4730AP)</option>
             <option value="Renault Duster (KA0144PK)">Renault Duster (KA0144PK)</option>
@@ -54,13 +55,14 @@
 
         <div id="clients_container">
             <!-- Перший клієнт (за замовчуванням) -->
-            <div class="client-block" data-index="0">
-                <button class="remove-btn" onclick="removeClient(0)" style="display:none;">✕</button>
-                <details open>
-                    <summary><b>Клієнт 1</b> (заповніть дані)</summary>
+            <details open data-index="0" id="detail_0">
+                <summary class="client-summary">
+                    <span id="summary_0">Клієнт 1</span>
+                    <button class="remove-btn" onclick="removeClient(0)" style="display:none;">✕</button>
+                </summary>
+                <div class="client-block" data-index="0">
                     <label>Область</label>
                     <select class="region-select">
-                        <!-- Список областей (захардкоджено) -->
                         <option value="">Оберіть область</option>
                         <option value="Вінницька">Вінницька</option>
                         <option value="Волинська">Волинська</option>
@@ -93,15 +95,15 @@
                     <input type="text" class="village-input" placeholder="Напр. Знам'янка">
 
                     <label>Клієнт</label>
-                    <input type="text" class="client-input" placeholder="Назва компанії">
+                    <input type="text" class="client-input" placeholder="Назва компанії" oninput="updateSummary(0)">
 
                     <label>Мета візиту</label>
                     <input type="text" class="purpose-input" placeholder="Напр. Перемовини про поставку">
 
                     <label>Результат</label>
                     <textarea class="result-input" rows="2" placeholder="Що вдалося зробити?"></textarea>
-                </details>
-            </div>
+                </div>
+            </details>
         </div>
 
         <button class="add-btn" onclick="addClient()">➕ Додати клієнта</button>
@@ -131,122 +133,114 @@
 
     let clientCounter = 1;
 
-    // Функція для створення HTML блоку клієнта
-    function createClientBlock(index) {
-        const block = document.createElement('div');
-        block.className = 'client-block';
-        block.dataset.index = index;
-
-        const removeBtn = document.createElement('button');
-        removeBtn.className = 'remove-btn';
-        removeBtn.textContent = '✕';
-        removeBtn.onclick = function() { removeClient(index); };
-        block.appendChild(removeBtn);
-
-        const details = document.createElement('details');
-        details.open = true;
-
-        const summary = document.createElement('summary');
-        summary.innerHTML = `<b>Клієнт ${index + 1}</b> (заповніть дані)`;
-        details.appendChild(summary);
-
-        // Поля
-        const fields = [
-            { tag: 'select', className: 'region-select', label: 'Область', options: ['Вінницька', 'Волинська', 'Дніпропетровська', 'Донецька', 'Житомирська', 'Закарпатська', 'Запорізька', 'Івано-Франківська', 'Київська', 'Кіровоградська', 'Луганська', 'Львівська', 'Миколаївська', 'Одеська', 'Полтавська', 'Рівненська', 'Сумська', 'Тернопільська', 'Харківська', 'Херсонська', 'Хмельницька', 'Черкаська', 'Чернівецька', 'Чернігівська', 'м. Київ'] },
-            { tag: 'input', className: 'village-input', label: 'Село / Населений пункт', placeholder: 'Напр. Знам\'янка' },
-            { tag: 'input', className: 'client-input', label: 'Клієнт', placeholder: 'Назва компанії' },
-            { tag: 'input', className: 'purpose-input', label: 'Мета візиту', placeholder: 'Напр. Перемовини про поставку' },
-            { tag: 'textarea', className: 'result-input', label: 'Результат', placeholder: 'Що вдалося зробити?', rows: 2 }
-        ];
-
-        fields.forEach(field => {
-            const label = document.createElement('label');
-            label.textContent = field.label;
-            details.appendChild(label);
-
-            let el;
-            if (field.tag === 'select') {
-                el = document.createElement('select');
-                el.className = field.className;
-                const defaultOption = document.createElement('option');
-                defaultOption.value = '';
-                defaultOption.textContent = 'Оберіть область';
-                el.appendChild(defaultOption);
-                field.options.forEach(opt => {
-                    const option = document.createElement('option');
-                    option.value = opt;
-                    option.textContent = opt;
-                    el.appendChild(option);
-                });
-            } else if (field.tag === 'textarea') {
-                el = document.createElement('textarea');
-                el.className = field.className;
-                el.placeholder = field.placeholder;
-                el.rows = field.rows || 2;
-            } else {
-                el = document.createElement('input');
-                el.type = 'text';
-                el.className = field.className;
-                el.placeholder = field.placeholder;
-            }
-            details.appendChild(el);
-        });
-
-        block.appendChild(details);
-        return block;
+    // Функція оновлення заголовка клієнта
+    function updateSummary(index) {
+        const detail = document.getElementById(`detail_${index}`);
+        if (!detail) return;
+        const summarySpan = document.getElementById(`summary_${index}`);
+        const clientInput = detail.querySelector('.client-input');
+        const villageInput = detail.querySelector('.village-input');
+        const clientName = clientInput ? clientInput.value.trim() : '';
+        const village = villageInput ? villageInput.value.trim() : '';
+        let label = `Клієнт ${index + 1}`;
+        if (clientName) {
+            label = clientName;
+            if (village) label += ` (${village})`;
+        } else if (village) {
+            label = `Клієнт ${index + 1} (${village})`;
+        }
+        summarySpan.innerText = label;
     }
 
     function addClient() {
+        // Згортаємо всі попередні блоки
+        const allDetails = document.querySelectorAll('details');
+        allDetails.forEach(d => d.open = false);
+
         const container = document.getElementById('clients_container');
-        const newIndex = clientCounter++;
-        const newBlock = createClientBlock(newIndex);
-        container.appendChild(newBlock);
+        const firstDetail = container.querySelector('details');
+        const newDetail = firstDetail.cloneNode(true);
+        const index = clientCounter++;
+
+        // Оновлюємо ID та атрибути
+        newDetail.id = `detail_${index}`;
+        newDetail.open = true;
+        newDetail.dataset.index = index;
+
+        // Очищуємо значення полів
+        newDetail.querySelectorAll('input, textarea, select').forEach(el => {
+            if (el.tagName === 'SELECT') {
+                el.selectedIndex = 0;
+            } else if (el.className !== 'remove-btn') {
+                el.value = '';
+            }
+        });
+
+        // Оновлюємо заголовок
+        const summarySpan = document.getElementById(`summary_${index}`) || newDetail.querySelector('summary span');
+        if (summarySpan) {
+            summarySpan.id = `summary_${index}`;
+            summarySpan.innerText = `Клієнт ${index + 1}`;
+        }
+
+        // Додаємо обробник для кнопки видалення
+        const removeBtn = newDetail.querySelector('.remove-btn');
+        removeBtn.style.display = 'inline';
+        removeBtn.onclick = function(e) {
+            e.stopPropagation();
+            removeClient(index);
+        };
+
+        // Додаємо обробник для оновлення заголовка при введенні клієнта
+        const clientInput = newDetail.querySelector('.client-input');
+        const villageInput = newDetail.querySelector('.village-input');
+        if (clientInput) {
+            clientInput.addEventListener('input', () => updateSummary(index));
+        }
+        if (villageInput) {
+            villageInput.addEventListener('input', () => updateSummary(index));
+        }
+
+        // Додаємо в контейнер
+        container.appendChild(newDetail);
+
+        // Оновлюємо нумерацію всіх клієнтів
+        updateAllNumbers();
     }
 
     function removeClient(index) {
         const container = document.getElementById('clients_container');
-        const blocks = container.querySelectorAll('.client-block');
-        if (blocks.length <= 1) {
+        const details = container.querySelectorAll('details');
+        if (details.length <= 1) {
             alert('Має бути хоча б один клієнт.');
             return;
         }
-        blocks.forEach(block => {
-            if (block.dataset.index == index) {
-                block.remove();
-            }
-        });
-        // Оновлюємо номери в summary для всіх блоків
-        const allBlocks = container.querySelectorAll('.client-block');
-        allBlocks.forEach((block, idx) => {
-            const summary = block.querySelector('summary');
-            if (summary) {
-                const match = summary.textContent.match(/Клієнт\s*(\d+)/);
-                if (match) {
-                    summary.innerHTML = `<b>Клієнт ${idx + 1}</b> (${summary.textContent.replace(/Клієнт\s*\d+/, '').trim() || 'заповніть дані'})`;
-                } else {
-                    summary.innerHTML = `<b>Клієнт ${idx + 1}</b> (заповніть дані)`;
-                }
-            }
-        });
+        const target = document.getElementById(`detail_${index}`);
+        if (target) {
+            target.remove();
+            updateAllNumbers();
+        }
     }
 
-    // Ініціалізація: оновлюємо номери перших клієнтів
-    function updateClientNumbers() {
+    function updateAllNumbers() {
         const container = document.getElementById('clients_container');
-        const blocks = container.querySelectorAll('.client-block');
-        blocks.forEach((block, idx) => {
-            const summary = block.querySelector('summary');
-            if (summary) {
-                const match = summary.textContent.match(/Клієнт\s*(\d+)/);
-                if (match) {
-                    summary.innerHTML = `<b>Клієнт ${idx + 1}</b> (${summary.textContent.replace(/Клієнт\s*\d+/, '').trim() || 'заповніть дані'})`;
-                } else {
-                    summary.innerHTML = `<b>Клієнт ${idx + 1}</b> (заповніть дані)`;
-                }
+        const details = container.querySelectorAll('details');
+        details.forEach((detail, idx) => {
+            const summarySpan = detail.querySelector('summary span');
+            if (summarySpan && !summarySpan.innerText.includes('(')) {
+                summarySpan.innerText = `Клієнт ${idx + 1}`;
+            }
+            // Оновлюємо data-index для кожного блоку
+            detail.dataset.index = idx;
+            // Оновлюємо id
+            detail.id = `detail_${idx}`;
+            // Оновлюємо id для summary
+            const newSummary = document.getElementById(`summary_${idx}`);
+            if (newSummary) {
+                newSummary.id = `summary_${idx}`;
             }
         });
     }
-    updateClientNumbers();
 
     function submitFieldWork() {
         const car = document.getElementById('car_select').value;
@@ -254,13 +248,13 @@
 
         // Збираємо дані клієнтів
         const clients = [];
-        const blocks = document.querySelectorAll('.client-block');
-        blocks.forEach(block => {
-            const region = block.querySelector('.region-select').value.trim();
-            const village = block.querySelector('.village-input').value.trim();
-            const client = block.querySelector('.client-input').value.trim();
-            const purpose = block.querySelector('.purpose-input').value.trim();
-            const result = block.querySelector('.result-input').value.trim();
+        const details = document.querySelectorAll('details');
+        details.forEach(detail => {
+            const region = detail.querySelector('.region-select')?.value.trim() || '';
+            const village = detail.querySelector('.village-input')?.value.trim() || '';
+            const client = detail.querySelector('.client-input')?.value.trim() || '';
+            const purpose = detail.querySelector('.purpose-input')?.value.trim() || '';
+            const result = detail.querySelector('.result-input')?.value.trim() || '';
             if (region && village && client) {
                 clients.push({ region, village, client, purpose, result });
             }
@@ -277,7 +271,7 @@
             car: car,
             manager: document.getElementById('pib').innerText || '',
             user_id: params.get('user_id') || '',
-            clients: clients  // масив клієнтів
+            clients: clients
         };
 
         // Попередній перегляд
@@ -290,10 +284,14 @@
         document.getElementById('preview_content').innerHTML = previewHtml;
         document.getElementById('preview_box').style.display = 'block';
 
-        // Відправляємо дані в бот
         tg.sendData(JSON.stringify(data));
         setTimeout(() => tg.close(), 500);
     }
+
+    // Ініціалізація: оновлюємо заголовок першого клієнта
+    window.onload = function() {
+        updateSummary(0);
+    };
 </script>
 </body>
 </html>
