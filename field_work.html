@@ -22,11 +22,8 @@
         .client-block { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px; margin-bottom: 12px; position: relative; }
         .remove-btn { position: absolute; top: 6px; right: 10px; color: #ef4444; font-size: 18px; cursor: pointer; background: none; border: none; }
         .add-btn { background: #10b981; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 5px; }
-        .client-header { cursor: pointer; font-weight: bold; padding: 5px 0; display: flex; justify-content: space-between; align-items: center; }
-        .client-header .toggle-icon { font-size: 12px; }
-        .client-body { display: block; }
-        .client-body.collapsed { display: none; }
-        .client-name-display { color: #1e40af; font-weight: bold; }
+        details { margin-bottom: 8px; }
+        summary { font-weight: bold; cursor: pointer; padding: 5px 0; }
     </style>
 </head>
 <body>
@@ -54,16 +51,13 @@
         <hr style="margin: 15px 0; border: 1px dashed #d1d5db;">
 
         <div id="clients_container">
-            <!-- Перший клієнт (за замовчуванням) -->
+            <!-- Перший клієнт -->
             <div class="client-block" data-index="0">
                 <button class="remove-btn" onclick="removeClient(0)" style="display:none;">✕</button>
-                <div class="client-header" onclick="toggleClient(0)">
-                    <span><span class="client-name-display" id="client_name_0">Клієнт #1</span></span>
-                    <span class="toggle-icon" id="toggle_icon_0">▲</span>
-                </div>
-                <div class="client-body" id="client_body_0">
+                <details open>
+                    <summary><b>Клієнт 1</b></summary>
                     <label>Область</label>
-                    <select class="region-select" onchange="updateClientName(0)">
+                    <select class="region-select">
                         <option value="">Оберіть область</option>
                         <option value="Вінницька">Вінницька</option>
                         <option value="Волинська">Волинська</option>
@@ -91,19 +85,15 @@
                         <option value="Чернігівська">Чернігівська</option>
                         <option value="м. Київ">м. Київ</option>
                     </select>
-
-                    <label>Село / Населений пункт</label>
-                    <input type="text" class="village-input" placeholder="Напр. Знам'янка" onchange="updateClientName(0)">
-
+                    <label>Село</label>
+                    <input type="text" class="village-input" placeholder="Напр. Знам'янка">
                     <label>Клієнт</label>
-                    <input type="text" class="client-input" placeholder="Назва компанії" onchange="updateClientName(0)">
-
+                    <input type="text" class="client-input" placeholder="Назва компанії">
                     <label>Мета візиту</label>
                     <input type="text" class="purpose-input" placeholder="Напр. Перемовини про поставку">
-
                     <label>Результат</label>
                     <textarea class="result-input" rows="2" placeholder="Що вдалося зробити?"></textarea>
-                </div>
+                </details>
             </div>
         </div>
 
@@ -134,43 +124,22 @@
 
     let clientCounter = 1;
 
-    function updateClientName(index) {
-        const block = document.querySelector(`.client-block[data-index="${index}"]`);
-        const clientName = block.querySelector('.client-input').value.trim();
-        const village = block.querySelector('.village-input').value.trim();
-        const regionSelect = block.querySelector('.region-select');
-        const region = regionSelect.options[regionSelect.selectedIndex].text;
-        const nameSpan = document.getElementById(`client_name_${index}`);
-        if (clientName) {
-            nameSpan.innerText = clientName;
-        } else if (village && region) {
-            nameSpan.innerText = `${village}, ${region}`;
-        } else if (village) {
-            nameSpan.innerText = village;
-        } else {
-            nameSpan.innerText = `Клієнт #${index+1}`;
-        }
-    }
-
-    function toggleClient(index) {
-        const body = document.getElementById(`client_body_${index}`);
-        const icon = document.getElementById(`toggle_icon_${index}`);
-        if (body.classList.contains('collapsed')) {
-            body.classList.remove('collapsed');
-            icon.innerText = '▲';
-        } else {
-            body.classList.add('collapsed');
-            icon.innerText = '▼';
-        }
-    }
-
     function addClient() {
         const container = document.getElementById('clients_container');
-        const newBlock = container.children[0].cloneNode(true);
+        // Беремо перший блок як шаблон
+        const template = container.querySelector('.client-block');
+        if (!template) return;
+
+        // Клонуємо
+        const newBlock = template.cloneNode(true);
         const index = clientCounter++;
+
+        // Оновлюємо атрибути
         newBlock.dataset.index = index;
         newBlock.querySelector('.remove-btn').style.display = 'inline';
-        // Очищуємо значення
+        newBlock.querySelector('.remove-btn').onclick = function() { removeClient(index); };
+
+        // Очищуємо всі поля введення
         newBlock.querySelectorAll('input, textarea, select').forEach(el => {
             if (el.tagName === 'SELECT') {
                 el.selectedIndex = 0;
@@ -178,27 +147,27 @@
                 el.value = '';
             }
         });
-        // Додаємо обробник для кнопки видалення
-        newBlock.querySelector('.remove-btn').onclick = function() { removeClient(index); };
-        // Оновлюємо ID для заголовка
-        const header = newBlock.querySelector('.client-header');
-        const nameSpan = newBlock.querySelector('.client-name-display');
-        nameSpan.id = `client_name_${index}`;
-        const body = newBlock.querySelector('.client-body');
-        body.id = `client_body_${index}`;
-        const icon = newBlock.querySelector('.toggle-icon');
-        icon.id = `toggle_icon_${index}`;
-        // Додаємо події для оновлення назви
-        newBlock.querySelector('.client-input').addEventListener('change', function() { updateClientName(index); });
-        newBlock.querySelector('.village-input').addEventListener('change', function() { updateClientName(index); });
-        newBlock.querySelector('.region-select').addEventListener('change', function() { updateClientName(index); });
-        // Оновлюємо назву
-        updateClientName(index);
-        container.appendChild(newBlock);
-        // Згортаємо новий блок (крім першого)
-        if (index > 1) {
-            toggleClient(index);
+
+        // Змінюємо заголовок summary
+        const summary = newBlock.querySelector('summary');
+        if (summary) {
+            summary.innerHTML = `<b>Клієнт ${index + 1}</b>`;
         }
+
+        // Додаємо в контейнер
+        container.appendChild(newBlock);
+
+        // Згортаємо попередні блоки (крім першого, якщо він відкритий)
+        const blocks = container.querySelectorAll('.client-block');
+        blocks.forEach((block, i) => {
+            const details = block.querySelector('details');
+            if (details && i < blocks.length - 1) {
+                details.open = false; // згортаємо всі крім останнього
+            }
+        });
+        // Останній блок відкриваємо
+        const lastDetails = newBlock.querySelector('details');
+        if (lastDetails) lastDetails.open = true;
     }
 
     function removeClient(index) {
@@ -211,6 +180,18 @@
         blocks.forEach(block => {
             if (block.dataset.index == index) {
                 block.remove();
+            }
+        });
+        // Оновлюємо нумерацію в заголовках
+        updateClientNumbers();
+    }
+
+    function updateClientNumbers() {
+        const blocks = document.querySelectorAll('.client-block');
+        blocks.forEach((block, i) => {
+            const summary = block.querySelector('summary');
+            if (summary) {
+                summary.innerHTML = `<b>Клієнт ${i + 1}</b>`;
             }
         });
     }
@@ -261,12 +242,6 @@
         tg.sendData(JSON.stringify(data));
         setTimeout(() => tg.close(), 500);
     }
-
-    // Додаємо обробники для першого блоку
-    document.querySelector('.client-block .client-input').addEventListener('change', function() { updateClientName(0); });
-    document.querySelector('.client-block .village-input').addEventListener('change', function() { updateClientName(0); });
-    document.querySelector('.client-block .region-select').addEventListener('change', function() { updateClientName(0); });
-    updateClientName(0);
 </script>
 </body>
 </html>
